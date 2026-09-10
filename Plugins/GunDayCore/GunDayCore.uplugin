@@ -1,0 +1,20 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "GunDayCore",
+	"Description": "K-GTA 전용 게임플레이 코어. 수배 레벨 시스템과 경찰 대응 배선을 담는다. 구매한 슈터 킷을 직접 고치지 않기 위해 분리된 플러그인으로 둔다.",
+	"Category": "Gameplay",
+	"CreatedBy": "K-GTA",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "GunDayCore",
+			"Type": "Runtime",
+			"LoadingPhase": "PreDefault"
+		}
+	]
+}

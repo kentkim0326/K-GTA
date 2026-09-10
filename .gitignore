@@ -1,0 +1,29 @@
+# Unreal Engine — 생성물 (커밋 금지)
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+.vs/
+.idea/
+*.VC.db
+*.opensdf
+*.opendb
+*.sdf
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
+
+# 플러그인 하위의 생성물도 동일
+Plugins/**/Binaries/
+Plugins/**/Intermediate/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 로컬 전용
+*.log
+*.tmp
