@@ -2,7 +2,9 @@
 
 #include "GunDayPoliceResponseSubsystem.h"
 
+#include "AIController.h"
 #include "AI/NavigationSystemBase.h"
+#include "DrawDebugHelpers.h"
 #include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
@@ -121,6 +123,13 @@ void UGunDayPoliceResponseSubsystem::Tick(float DeltaTime)
 	PruneResponders(Tier);
 
 	TimeSinceLastSpawn += DeltaTime;
+	TimeSinceRepath += DeltaTime;
+
+	if (Settings->bDriveRespondersToPlayer && TimeSinceRepath >= Settings->ResponderRepathIntervalSeconds)
+	{
+		TimeSinceRepath = 0.0f;
+		DriveRespondersToPlayer();
+	}
 
 	if (bHasTier && Settings->bSpawnResponders && !Tier.ResponderClass.IsNull())
 	{
@@ -137,6 +146,66 @@ void UGunDayPoliceResponseSubsystem::Tick(float DeltaTime)
 	{
 		GEngine->AddOnScreenDebugMessage(7704, 1.0f, FColor(120, 190, 240),
 			FString::Printf(TEXT("경찰 %d / %d 명"), GetAliveResponderCount(), GetDesiredResponderCount()));
+
+		DrawResponderMarkers();
+	}
+}
+
+void UGunDayPoliceResponseSubsystem::DriveRespondersToPlayer()
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (!Settings || !IsValid(Player))
+	{
+		return;
+	}
+
+	const float EngageDistanceSquared = Settings->ResponderEngageDistance * Settings->ResponderEngageDistance;
+
+	for (const TWeakObjectPtr<AActor>& Weak : Responders)
+	{
+		AActor* Responder = Weak.Get();
+		if (!IsValid(Responder))
+		{
+			continue;
+		}
+
+		// 교전 거리 안에 들어왔으면 킷 AI 가 알아서 한다. 끼어들지 않는다.
+		if (FVector::DistSquared(Responder->GetActorLocation(), Player->GetActorLocation()) <= EngageDistanceSquared)
+		{
+			continue;
+		}
+
+		const APawn* ResponderPawn = Cast<APawn>(Responder);
+		AAIController* Controller = ResponderPawn ? Cast<AAIController>(ResponderPawn->GetController()) : nullptr;
+		if (!Controller)
+		{
+			continue;
+		}
+
+		Controller->MoveToActor(Player, Settings->ResponderEngageDistance * 0.5f);
+	}
+}
+
+void UGunDayPoliceResponseSubsystem::DrawResponderMarkers() const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	// 어디 있는지 몰라 찾아다니는 일이 없도록 머리 위에 표시를 둔다.
+	for (const TWeakObjectPtr<AActor>& Weak : Responders)
+	{
+		const AActor* Responder = Weak.Get();
+		if (!IsValid(Responder))
+		{
+			continue;
+		}
+
+		const FVector Above = Responder->GetActorLocation() + FVector(0.0f, 0.0f, 150.0f);
+		DrawDebugSphere(World, Above, 30.0f, 8, FColor(120, 190, 240), false, -1.0f, 0, 2.0f);
 	}
 }
 

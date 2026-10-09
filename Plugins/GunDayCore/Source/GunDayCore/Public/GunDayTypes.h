@@ -62,11 +62,11 @@ struct GUNDAYCORE_API FGunDayResponseTier
 
 	/** 플레이어로부터 이 거리보다 가까운 곳에는 생성하지 않는다. 눈앞에 튀어나오지 않게 한다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "경찰 대응", meta = (ClampMin = "0.0"))
-	float MinSpawnDistance = 1500.0f;
+	float MinSpawnDistance = 900.0f;
 
 	/** 생성 후보를 찾는 최대 반경. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "경찰 대응", meta = (ClampMin = "0.0"))
-	float MaxSpawnDistance = 4000.0f;
+	float MaxSpawnDistance = 2500.0f;
 
 	/** 이 거리보다 멀어진 투입 인원은 정리한다. 0 이면 정리하지 않는다. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "경찰 대응", meta = (ClampMin = "0.0"))

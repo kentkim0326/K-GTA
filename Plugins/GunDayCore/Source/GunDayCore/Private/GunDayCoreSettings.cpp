@@ -10,6 +10,9 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 	, MaxHeat(600.0f)
 	, bSpawnResponders(true)
 	, bDismissRespondersOnClear(true)
+	, bDriveRespondersToPlayer(true)
+	, ResponderEngageDistance(1200.0f)
+	, ResponderRepathIntervalSeconds(2.0f)
 	, bRespondersCountAsWitnesses(true)
 	, bAutoReportCrimes(true)
 	, PawnRescanIntervalSeconds(2.0f)
@@ -45,6 +48,8 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 		Tier.WantedLevel = Level;
 		Tier.DesiredCount = Level * 2;
 		Tier.SpawnIntervalSeconds = FMath::Max(1.0f, 4.0f - Level * 0.5f);
+		Tier.MinSpawnDistance = 900.0f;
+		Tier.MaxSpawnDistance = 2500.0f;
 		ResponseTiers.Add(Tier);
 	}
 }

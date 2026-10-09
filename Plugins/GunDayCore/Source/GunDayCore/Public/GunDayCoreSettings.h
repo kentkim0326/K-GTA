@@ -71,6 +71,21 @@ public:
 	bool bDismissRespondersOnClear;
 
 	/**
+	 * 투입된 경찰이 플레이어 쪽으로 다가오게 한다.
+	 * 끄면 그 자리에 선 채 킷 AI 가 플레이어를 인지할 때까지 기다린다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "경찰 대응")
+	bool bDriveRespondersToPlayer;
+
+	/** 이 거리보다 멀면 다가온다. 이 안에 들어오면 킷 AI 에 맡긴다. */
+	UPROPERTY(config, EditAnywhere, Category = "경찰 대응", meta = (ClampMin = "0.0"))
+	float ResponderEngageDistance;
+
+	/** 다가오는 명령을 다시 내리는 간격(초). */
+	UPROPERTY(config, EditAnywhere, Category = "경찰 대응", meta = (ClampMin = "0.1", Units = "s"))
+	float ResponderRepathIntervalSeconds;
+
+	/**
 	 * 투입된 경찰을 목격자로 친다.
 	 * 켜 두면 경찰이 살아 있는 동안 열기가 줄지 않는다. 떼어내거나 쓰러뜨려야 수배가 풀린다.
 	 */

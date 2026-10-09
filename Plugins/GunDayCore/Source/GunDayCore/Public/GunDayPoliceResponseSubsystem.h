@@ -125,6 +125,12 @@ private:
 	/** 한 명을 투입한다. 자리를 못 찾으면 false. */
 	bool TrySpawnResponder(const FGunDayResponseTier& Tier);
 
+	/** 멀리 있는 인원을 플레이어 쪽으로 보낸다. 가까워지면 킷 AI 에 맡긴다. */
+	void DriveRespondersToPlayer();
+
+	/** 디버그 HUD 가 켜져 있을 때 투입 인원 위에 표시를 그린다. */
+	void DrawResponderMarkers() const;
+
 	/** 플레이어 주변 내비메시 위에서 시야 밖 지점을 고른다. */
 	bool FindSpawnLocation(const FGunDayResponseTier& Tier, const AActor& Player, FVector& OutLocation) const;
 
@@ -138,6 +144,9 @@ private:
 
 	/** 마지막 투입 이후 흐른 시간(초). */
 	float TimeSinceLastSpawn = 0.0f;
+
+	/** 마지막 접근 명령 이후 흐른 시간(초). */
+	float TimeSinceRepath = 0.0f;
 
 	/** 마지막으로 반영한 수배 레벨. */
 	int32 CachedWantedLevel = 0;

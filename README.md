@@ -156,12 +156,17 @@ Visual Studio 2022 와 Windows SDK 가 필요하다.
 | Responder Class | 투입할 액터. **킷의 적 블루프린트를 여기서 고른다.** 비우면 스폰하지 않는다 |
 | Desired Count | 그 레벨에서 유지할 인원 |
 | Spawn Interval | 한 명과 다음 한 명 사이의 간격(초) |
-| Min / Max Spawn Distance | 플레이어로부터 이 범위 안의 내비메시 위에 생성한다 |
+| Min / Max Spawn Distance | 플레이어로부터 이 범위 안의 내비메시 위에 생성한다 (기본 9~25m) |
+| Drive Responders To Player | 멀리 있는 인원을 플레이어 쪽으로 보낸다 |
+| Responder Engage Distance | 이 거리 안에 들어오면 접근을 멈추고 킷 AI 에 맡긴다 |
 | Despawn Distance | 이보다 멀어진 인원은 정리한다 |
 
 `Responders Count As Witnesses` 를 켜 두면 투입된 경찰이 목격자로 잡힌다.
 경찰이 살아 있는 동안에는 열기가 줄지 않는다. 쓰러뜨리거나 Despawn Distance 밖으로
 도망쳐야 수배가 풀린다. 이게 추격에서 벗어나는 방법이 된다.
+
+투입된 경찰은 교전 거리까지 스스로 다가온다. 적을 찾아다닐 필요가 없다.
+디버그 HUD 가 켜져 있으면 머리 위에 파란 구가 그려져 어디 있는지 바로 보인다.
 
 생성 위치는 내비메시 위에서 고르고 플레이어 시야 밖을 우선한다. **레벨에 NavMeshBoundsVolume 이 없으면
 아무도 생성되지 않는다.** 로그에 경고가 찍힌다.
