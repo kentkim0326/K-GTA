@@ -237,7 +237,7 @@ namespace GunDayDebug
 
 		const float TimeUntilDecay = Subsystem.GetTimeUntilDecay();
 		const FString DecayText = Subsystem.IsSpotted()
-			? TEXT("목격 중 — 감소 없음")
+			? FString::Printf(TEXT("목격자 %d명 — 감소 없음"), Subsystem.GetWitnessCount())
 			: (TimeUntilDecay > 0.0f
 				? FString::Printf(TEXT("%.1f초 뒤 감소 시작"), TimeUntilDecay)
 				: TEXT("감소 중"));

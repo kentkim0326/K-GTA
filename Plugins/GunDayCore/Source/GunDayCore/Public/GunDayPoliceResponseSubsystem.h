@@ -102,6 +102,15 @@ private:
 	UFUNCTION()
 	void HandleWantedLevelChanged(int32 OldLevel, int32 NewLevel);
 
+	/** 목록에 넣고 목격자 수를 맞춘다. 투입 경로는 전부 이걸 거친다. */
+	void AddToRoster(AActor* Responder);
+
+	/** 목록에서 빼고 목격자 수를 맞춘다. 빠진 액터를 돌려준다(이미 사라졌으면 널). */
+	AActor* RemoveFromRosterAt(int32 Index);
+
+	/** 투입 인원 수와 등록해 둔 목격자 수를 맞춘다. */
+	void SyncWitnessCount();
+
 	/** 죽었거나 사라진 인원을 목록에서 뺀다. 너무 멀어진 인원도 정리한다. */
 	void PruneResponders(const FGunDayResponseTier& Tier);
 
@@ -128,4 +137,7 @@ private:
 	bool bResponseEnabled = true;
 
 	bool bBoundToWanted = false;
+
+	/** 수배 시스템에 올려 둔 목격자 수. 투입 인원 수와 같게 유지한다. */
+	int32 RegisteredWitnesses = 0;
 };

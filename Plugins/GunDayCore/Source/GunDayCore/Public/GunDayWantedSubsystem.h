@@ -87,6 +87,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "GunDay|Wanted")
 	float GetHeatFractionToNextLevel() const;
 
+	/** 지금 플레이어를 보고 있는 목격자 수. */
+	UFUNCTION(BlueprintPure, Category = "GunDay|Wanted")
+	int32 GetWitnessCount() const { return WitnessCount; }
+
 	/** 지금 누군가가 플레이어를 보고 있는가. */
 	UFUNCTION(BlueprintPure, Category = "GunDay|Wanted")
 	bool IsSpotted() const { return WitnessCount > 0; }

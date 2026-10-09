@@ -10,6 +10,7 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 	, MaxHeat(600.0f)
 	, bSpawnResponders(true)
 	, bDismissRespondersOnClear(true)
+	, bRespondersCountAsWitnesses(true)
 {
 	CrimeHeat.Add(EGunDayCrime::Brandishing, 10.0f);
 	CrimeHeat.Add(EGunDayCrime::PublicGunfire, 25.0f);

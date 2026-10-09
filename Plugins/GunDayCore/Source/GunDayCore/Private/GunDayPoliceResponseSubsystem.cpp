@@ -74,8 +74,9 @@ void UGunDayPoliceResponseSubsystem::Deinitialize()
 		bBoundToWanted = false;
 	}
 
-	// 월드가 내려가는 중이라 액터를 건드리지 않는다. 목록만 비운다.
+	// 월드가 내려가는 중이라 액터를 건드리지 않는다. 목록만 비우고 목격자 몫을 걷어낸다.
 	Responders.Reset();
+	SyncWitnessCount();
 
 	OnResponseTierChanged.Clear();
 	OnResponderSpawned.Clear();
@@ -169,15 +170,59 @@ void UGunDayPoliceResponseSubsystem::RegisterResponder(AActor* Responder)
 		return;
 	}
 
-	Responders.Add(Responder);
-	OnResponderSpawned.Broadcast(Responder);
+	AddToRoster(Responder);
 }
 
 void UGunDayPoliceResponseSubsystem::UnregisterResponder(AActor* Responder)
 {
-	if (Responders.Remove(Responder) > 0)
+	const int32 Index = Responders.IndexOfByKey(Responder);
+	if (Index == INDEX_NONE)
 	{
-		OnResponderDismissed.Broadcast(Responder);
+		return;
+	}
+
+	RemoveFromRosterAt(Index);
+	OnResponderDismissed.Broadcast(Responder);
+}
+
+void UGunDayPoliceResponseSubsystem::AddToRoster(AActor* Responder)
+{
+	Responders.Add(Responder);
+	SyncWitnessCount();
+	OnResponderSpawned.Broadcast(Responder);
+}
+
+AActor* UGunDayPoliceResponseSubsystem::RemoveFromRosterAt(int32 Index)
+{
+	AActor* Responder = Responders[Index].Get();
+	Responders.RemoveAt(Index);
+	SyncWitnessCount();
+
+	return Responder;
+}
+
+void UGunDayPoliceResponseSubsystem::SyncWitnessCount()
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	UGunDayWantedSubsystem* Wanted = GetWantedSubsystem();
+	if (!Settings || !Wanted)
+	{
+		return;
+	}
+
+	// 경찰을 목격자로 치지 않는 설정이면 올려 둔 몫만 걷어낸다.
+	const int32 Target = Settings->bRespondersCountAsWitnesses ? Responders.Num() : 0;
+
+	while (RegisteredWitnesses < Target)
+	{
+		Wanted->AddWitness();
+		++RegisteredWitnesses;
+	}
+
+	while (RegisteredWitnesses > Target)
+	{
+		Wanted->RemoveWitness();
+		--RegisteredWitnesses;
 	}
 }
 
@@ -185,6 +230,7 @@ void UGunDayPoliceResponseSubsystem::DismissAllResponders(bool bDestroyActors)
 {
 	TArray<TWeakObjectPtr<AActor>> Dismissed = MoveTemp(Responders);
 	Responders.Reset();
+	SyncWitnessCount();
 
 	for (const TWeakObjectPtr<AActor>& Weak : Dismissed)
 	{
@@ -271,13 +317,13 @@ void UGunDayPoliceResponseSubsystem::PruneResponders(const FGunDayResponseTier& 
 		if (!IsValid(Responder))
 		{
 			// 이미 죽었거나 사라졌다. 델리게이트에 넘길 포인터가 없으므로 조용히 뺀다.
-			Responders.RemoveAt(Index);
+			RemoveFromRosterAt(Index);
 			continue;
 		}
 
 		if (bCheckDistance && FVector::DistSquared(Responder->GetActorLocation(), Player->GetActorLocation()) > DespawnDistanceSquared)
 		{
-			Responders.RemoveAt(Index);
+			RemoveFromRosterAt(Index);
 			OnResponderDismissed.Broadcast(Responder);
 			Responder->Destroy();
 		}
@@ -318,8 +364,7 @@ bool UGunDayPoliceResponseSubsystem::TrySpawnResponder(const FGunDayResponseTier
 		return false;
 	}
 
-	Responders.Add(Spawned);
-	OnResponderSpawned.Broadcast(Spawned);
+	AddToRoster(Spawned);
 
 	UE_LOG(LogGunDay, Verbose, TEXT("경찰 투입: %s (%d / %d)"), *Spawned->GetName(), Responders.Num(), Tier.DesiredCount);
 	return true;

@@ -69,4 +69,11 @@ public:
 	/** 수배가 풀리면 투입했던 인원을 정리한다. */
 	UPROPERTY(config, EditAnywhere, Category = "경찰 대응")
 	bool bDismissRespondersOnClear;
+
+	/**
+	 * 투입된 경찰을 목격자로 친다.
+	 * 켜 두면 경찰이 살아 있는 동안 열기가 줄지 않는다. 떼어내거나 쓰러뜨려야 수배가 풀린다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "경찰 대응")
+	bool bRespondersCountAsWitnesses;
 };
