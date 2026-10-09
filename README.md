@@ -73,7 +73,19 @@ git status
 `Binaries`, `Intermediate`, `Saved`, `DerivedDataCache` 가 목록에 없어야 한다.
 `.uasset` 은 `git check-attr filter -- Content/어떤파일.uasset` 이 `lfs` 를 찍어야 한다.
 
-### 4. 플러그인 활성화
+### 4. 킷 콘텐츠는 저장소에 없다
+
+`Content` 의 킷 원본 약 12 GB 는 `.gitignore` 로 제외했다. GitHub 무료 LFS 한도가 1 GB 다.
+저장소에는 코드와 설정, 그리고 `Content/KGTA/` 아래 자체 에셋만 들어간다.
+
+PC 를 바꾸거나 처음부터 다시 깔 때의 순서는 이렇다.
+
+1. Epic Games Launcher 에서 Third Person Shooter Kit 으로 프로젝트를 새로 만든다 (UE 5.8).
+2. 그 폴더에서 위 2번 절차대로 이 저장소를 붙인다.
+
+자체 에셋은 전부 `Content/KGTA/` 아래에 만든다. 킷 에셋을 고쳐야 하면 거기로 복제해서 쓴다.
+
+### 5. 플러그인 활성화
 
 프로젝트를 열면 `GunDayCore` 가 Plugins 목록에 잡힌다.
 C++ 모듈이라 처음 열 때 빌드를 묻는다. 예를 누른다.

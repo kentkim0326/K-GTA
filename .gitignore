@@ -27,3 +27,9 @@ desktop.ini
 # 로컬 전용
 *.log
 *.tmp
+
+# 킷 원본 콘텐츠는 버전 관리하지 않는다 (약 12 GB).
+# PC가 바뀌면 Fab 라이브러리에서 킷 프로젝트를 다시 만들고 그 위에 이 저장소를 붙인다.
+# 내가 만든 에셋은 전부 Content/KGTA/ 아래에만 둔다.
+/Content/*
+!/Content/KGTA/
