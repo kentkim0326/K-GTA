@@ -10,6 +10,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FGunDayResponseTierChanged, int32, WantedLevel, int32, DesiredCount);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FGunDayResponderChanged, AActor*, Responder);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FGunDayResponderLost);
 
 /**
  * 경찰 대응 배선.
@@ -94,9 +95,16 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "GunDay|Police")
 	FGunDayResponderChanged OnResponderSpawned;
 
-	/** 한 명이 목록에서 빠졌다. 사망, 이탈, 정리 모두 포함한다. */
+	/** 한 명이 목록에서 빠졌다. 이탈과 정리를 포함한다. 액터는 아직 살아 있다. */
 	UPROPERTY(BlueprintAssignable, Category = "GunDay|Police")
 	FGunDayResponderChanged OnResponderDismissed;
+
+	/**
+	 * 한 명이 사라졌다. 대개 쓰러져서 액터가 없어진 경우다.
+	 * 넘길 포인터가 남아 있지 않아 인자가 없다.
+	 */
+	UPROPERTY(BlueprintAssignable, Category = "GunDay|Police")
+	FGunDayResponderLost OnResponderLost;
 
 private:
 	UFUNCTION()

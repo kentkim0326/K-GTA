@@ -81,6 +81,7 @@ void UGunDayPoliceResponseSubsystem::Deinitialize()
 	OnResponseTierChanged.Clear();
 	OnResponderSpawned.Clear();
 	OnResponderDismissed.Clear();
+	OnResponderLost.Clear();
 
 	Super::Deinitialize();
 }
@@ -316,8 +317,9 @@ void UGunDayPoliceResponseSubsystem::PruneResponders(const FGunDayResponseTier& 
 
 		if (!IsValid(Responder))
 		{
-			// 이미 죽었거나 사라졌다. 델리게이트에 넘길 포인터가 없으므로 조용히 뺀다.
+			// 이미 죽었거나 사라졌다. 넘길 포인터가 없어 인자 없는 신호를 쓴다.
 			RemoveFromRosterAt(Index);
+			OnResponderLost.Broadcast();
 			continue;
 		}
 

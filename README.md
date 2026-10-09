@@ -135,6 +135,8 @@ Visual Studio 2022 와 Windows SDK 가 필요하다.
 | `GunDay.AutoReport 0` | 피해 자동 신고를 끈다 |
 | `GunDay.Crowd.Gunshot` | 주변 시민을 흩어지게 한다 |
 | `GunDay.Crowd.Calm` | 놀란 시민을 진정시킨다 |
+| `GunDay.Alley.Start` | 1분 총격전 측정을 시작한다 |
+| `GunDay.Alley.Stop` | 측정을 중단한다 |
 
 확인해 볼 흐름은 이렇다. `GunDay.ShowDebug 1` 로 HUD 를 켜고 `GunDay.Fire` 를 몇 번 치면
 열기가 쌓이고 별이 늘어난다. 그대로 두면 회피 대기 시간이 지난 뒤 열기가 줄고 별이 빠진다.
@@ -204,6 +206,22 @@ Visual Studio 2022 와 Windows SDK 가 필요하다.
 
 한 번에 반응하는 시민 수는 `Max Alerted Civilians` 로 묶여 있다. 기본 24명이다.
 도시 규모로 수천 명이 필요해지면 그때 City Sample 의 Mass Entity 로 갈아탄다.
+
+### 첫 마일스톤 측정
+
+`UGunDayEncounterSubsystem` — 「골목 하나에서 경찰 둘과 1분간 총격전」을 같은 조건으로
+반복해서 재기 위한 도구다. 매번 손으로 세팅하지 않는다.
+
+```
+GunDay.Alley.Start        60초, 수배 레벨 1
+GunDay.Alley.Start 90 2   90초, 수배 레벨 2
+```
+
+수배와 투입 인원과 놀란 시민을 전부 지우고 시작한다. 화면에 남은 시간과 처치 수가 뜨고,
+끝나면 생존 여부와 버틴 시간과 처치 수가 나온다. 플레이어가 쓰러지면 그 자리에서 끝난다.
+
+재미있는지 보는 것이 목적이다. 숫자가 아니라 손맛을 본다.
+지루하면 투입 간격과 인원을, 너무 어려우면 수배 레벨과 거리를 프로젝트 세팅에서 조정한다.
 
 ### 다음
 

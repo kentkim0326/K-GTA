@@ -9,6 +9,7 @@
 #include "GunDayCoreSettings.h"
 #include "GunDayCrimeWatcherSubsystem.h"
 #include "GunDayCrowdSubsystem.h"
+#include "GunDayEncounterSubsystem.h"
 #include "GunDayPoliceResponseSubsystem.h"
 #include "GunDayWantedSubsystem.h"
 #include "GameFramework/Pawn.h"
@@ -198,6 +199,33 @@ namespace
 
 			const bool bEnabled = (Args.Num() == 0) || (FCString::Atoi(*Args[0]) != 0);
 			Police->SetResponseEnabled(bEnabled);
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdAlleyStart(
+		TEXT("GunDay.Alley.Start"),
+		TEXT("골목 총격전 측정을 시작한다. 인자: 제한 시간(초), 수배 레벨. 예: GunDay.Alley.Start 60 1"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			UGunDayEncounterSubsystem* Encounter = World ? World->GetSubsystem<UGunDayEncounterSubsystem>() : nullptr;
+			if (!Encounter)
+			{
+				return;
+			}
+
+			const float Duration = (Args.Num() > 0) ? FCString::Atof(*Args[0]) : 60.0f;
+			const int32 Level = (Args.Num() > 1) ? FCString::Atoi(*Args[1]) : 1;
+			Encounter->StartEncounter(Duration, Level);
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdAlleyStop(
+		TEXT("GunDay.Alley.Stop"),
+		TEXT("골목 총격전 측정을 중단한다."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>&, UWorld* World)
+		{
+			if (UGunDayEncounterSubsystem* Encounter = World ? World->GetSubsystem<UGunDayEncounterSubsystem>() : nullptr)
+			{
+				Encounter->StopEncounter();
+			}
 		}));
 
 	FAutoConsoleCommandWithWorldAndArgs CmdCrowdGunshot(
