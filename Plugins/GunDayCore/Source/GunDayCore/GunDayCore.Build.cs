@@ -14,6 +14,7 @@ public class GunDayCore : ModuleRules
 			"CoreUObject",
 			"Engine",
 			"DeveloperSettings",
+			"NavigationSystem",
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

@@ -51,4 +51,22 @@ public:
 	/** 열기 상한. 문턱값 최대치를 넘겨 둬야 최고 수배가 잠깐이라도 유지된다. */
 	UPROPERTY(config, EditAnywhere, Category = "수배 레벨", meta = (ClampMin = "0.0"))
 	float MaxHeat;
+
+	/**
+	 * 수배 레벨별 경찰 투입 규칙. 레벨당 한 줄씩 채운다.
+	 * 비어 있으면 아무도 투입되지 않는다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "경찰 대응")
+	TArray<FGunDayResponseTier> ResponseTiers;
+
+	/**
+	 * 플러그인이 직접 액터를 스폰할지 여부.
+	 * 끄면 OnResponseTierChanged 만 울린다. 킷의 스포너를 쓰고 싶을 때 끈다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "경찰 대응")
+	bool bSpawnResponders;
+
+	/** 수배가 풀리면 투입했던 인원을 정리한다. */
+	UPROPERTY(config, EditAnywhere, Category = "경찰 대응")
+	bool bDismissRespondersOnClear;
 };

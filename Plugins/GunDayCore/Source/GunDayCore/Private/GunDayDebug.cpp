@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "GunDayCore.h"
 #include "GunDayCoreSettings.h"
+#include "GunDayPoliceResponseSubsystem.h"
 #include "GunDayWantedSubsystem.h"
 #include "HAL/IConsoleManager.h"
 
@@ -167,6 +168,32 @@ namespace
 				Subsystem->ClearWitnesses();
 				Subsystem->ClearWanted();
 			}
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdPoliceDismiss(
+		TEXT("GunDay.Police.Dismiss"),
+		TEXT("투입된 경찰을 전부 치운다. 수배 레벨은 그대로 둔다."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>&, UWorld* World)
+		{
+			if (UGunDayPoliceResponseSubsystem* Police = World ? World->GetSubsystem<UGunDayPoliceResponseSubsystem>() : nullptr)
+			{
+				Police->DismissAllResponders(true);
+			}
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdPoliceEnabled(
+		TEXT("GunDay.Police.Enabled"),
+		TEXT("경찰 투입을 켜고 끈다. 예: GunDay.Police.Enabled 0"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			UGunDayPoliceResponseSubsystem* Police = World ? World->GetSubsystem<UGunDayPoliceResponseSubsystem>() : nullptr;
+			if (!Police)
+			{
+				return;
+			}
+
+			const bool bEnabled = (Args.Num() == 0) || (FCString::Atoi(*Args[0]) != 0);
+			Police->SetResponseEnabled(bEnabled);
 		}));
 
 	/** 수배 레벨별 색. 0 은 회색, 올라갈수록 붉어진다. */

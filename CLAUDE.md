@@ -26,6 +26,6 @@ Unreal Engine 5.8 프로젝트. 배경과 결정 사항은 `docs/handover-2026-0
 ## 우선순위
 
 1. 수배 레벨 시스템 (완료 — `UGunDayWantedSubsystem`)
-2. 경찰 대응 배선 (수배 레벨 → AI 스포너 / 인카운터)
+2. 경찰 대응 배선 (완료 — `UGunDayPoliceResponseSubsystem`)
 3. 군중 반응
 4. 골목 하나에서 경찰 둘과 1분간 총격전 — 이것이 첫 마일스톤이다

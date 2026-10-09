@@ -130,14 +130,40 @@ Visual Studio 2022 와 Windows SDK 가 필요하다.
 | `GunDay.SetWanted 3` | 수배 레벨을 강제로 맞춘다 |
 | `GunDay.Witness 1` | 목격자를 늘린다. `-1` 이면 줄인다 |
 | `GunDay.Clear` | 수배와 목격자를 전부 지운다 |
+| `GunDay.Police.Dismiss` | 투입된 경찰을 전부 치운다 |
+| `GunDay.Police.Enabled 0` | 경찰 투입을 끈다 |
 
 확인해 볼 흐름은 이렇다. `GunDay.ShowDebug 1` 로 HUD 를 켜고 `GunDay.Fire` 를 몇 번 치면
 열기가 쌓이고 별이 늘어난다. 그대로 두면 회피 대기 시간이 지난 뒤 열기가 줄고 별이 빠진다.
 `GunDay.Witness 1` 로 목격자를 붙여 두면 줄지 않는다. `GunDay.Witness -1` 로 떼면 다시 준다.
 
+### 경찰 대응 배선
+
+`UGunDayPoliceResponseSubsystem` — 월드 서브시스템. 수배 레벨이 바뀌면 그 레벨의 규칙을 찾아
+살아 있어야 할 인원을 맞춘다. 모자라면 간격을 두고 한 명씩 투입하고, 죽거나 멀어진 인원은 정리한다.
+
+규칙은 **프로젝트 세팅 > Game > GunDay Core > 경찰 대응** 의 Response Tiers 표에서 정한다.
+레벨당 한 줄이고, 기본값으로 레벨 1~5 가 2·4·6·8·10 명으로 들어가 있다.
+
+| 항목 | 뜻 |
+|---|---|
+| Responder Class | 투입할 액터. **킷의 적 블루프린트를 여기서 고른다.** 비우면 스폰하지 않는다 |
+| Desired Count | 그 레벨에서 유지할 인원 |
+| Spawn Interval | 한 명과 다음 한 명 사이의 간격(초) |
+| Min / Max Spawn Distance | 플레이어로부터 이 범위 안의 내비메시 위에 생성한다 |
+| Despawn Distance | 이보다 멀어진 인원은 정리한다 |
+
+생성 위치는 내비메시 위에서 고르고 플레이어 시야 밖을 우선한다. **레벨에 NavMeshBoundsVolume 이 없으면
+아무도 생성되지 않는다.** 로그에 경고가 찍힌다.
+
+#### 킷 스포너를 쓰고 싶다면
+
+프로젝트 세팅에서 `Spawn Responders` 를 끄고 `On Response Tier Changed` 에 블루프린트를 붙인다.
+수배 레벨과 필요 인원이 넘어오므로 킷의 AI 스포너를 호출한 뒤, 스폰 결과를 `Register Responder` 로
+등록하면 인원 계산과 정리에 함께 들어간다.
+
 ### 다음
 
-1. 경찰 대응 배선 — 수배 레벨별로 어떤 AI 스포너와 인카운터를 호출할지. 인지는 AI Perception, 판단은 StateTree.
-2. 군중 반응 — 총성에 시민이 흩어지고 신고한다. Mass Entity 는 나중에.
+1. 군중 반응 — 총성에 시민이 흩어지고 신고한다. Mass Entity 는 나중에.
 
 첫 목표는 **골목 하나에서 경찰 둘과 1분간 총격전**이다. 도시도 차도 미션도 그 뒤다.

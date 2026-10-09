@@ -17,6 +17,8 @@ class UGunDayWantedSubsystem;
  *   GunDay.SetWanted 3
  *   GunDay.Witness 1        목격자 수를 1 늘린다 (-1 이면 줄인다)
  *   GunDay.Clear            수배 해제
+ *   GunDay.Police.Dismiss   투입된 경찰 전부 치우기
+ *   GunDay.Police.Enabled 0 경찰 투입 끄기
  */
 namespace GunDayDebug
 {
