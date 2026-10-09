@@ -13,6 +13,7 @@
 #include "GunDayCrowdSubsystem.h"
 #include "GunDayDebug.h"
 #include "GunDayDisputeSpot.h"
+#include "GunDayNewsSubsystem.h"
 #include "GunDayPoliceResponseSubsystem.h"
 #include "GunDaySocietySubsystem.h"
 #include "Kismet/GameplayStatics.h"
@@ -241,6 +242,11 @@ bool UGunDayDisputeSubsystem::BeginDispute(APawn& First, APawn& Second, int32 Sc
 
 	Active.Add(Dispute);
 
+	if (UGunDayNewsSubsystem* News = GetWorld() ? GetWorld()->GetSubsystem<UGunDayNewsSubsystem>() : nullptr)
+	{
+		News->ReportDispute();
+	}
+
 	UE_LOG(LogGunDay, Log, TEXT("시비 발생: %s (%s vs %s, 마찰 %.2f)"),
 		*Scenario->Name, *First.GetName(), *Second.GetName(), Dispute.Friction);
 
@@ -406,6 +412,12 @@ void UGunDayDisputeSubsystem::FireShot(FGunDayActiveDispute& Dispute)
 	if (Society && Settings)
 	{
 		Society->AddJeong(Settings->JeongOnDisputeShot);
+	}
+
+	if (UGunDayNewsSubsystem* News = GetWorld() ? GetWorld()->GetSubsystem<UGunDayNewsSubsystem>() : nullptr)
+	{
+		// 피해량이 충분하면 사망으로 친다. 킷의 체력 수치와 맞춰 둔다.
+		News->ReportShooting(Scenario->ShotDamage >= 100.0f, false);
 	}
 
 	UE_LOG(LogGunDay, Log, TEXT("시비 발포: %s 가 %s 를 쐈다 (%s)"),

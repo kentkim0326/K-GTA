@@ -29,6 +29,8 @@ class UGunDayWantedSubsystem;
  *   GunDay.Dispute.Clear    진행 중인 시비 끝내기
  *   GunDay.Jeong 80         사회의 정을 80 으로
  *   GunDay.Profile          주변 사람들의 진영 보기
+ *   GunDay.News.Next        뉴스 한 줄 내보내기
+ *   GunDay.News.Day         하루 넘겨 일일 집계 보기
  */
 namespace GunDayDebug
 {

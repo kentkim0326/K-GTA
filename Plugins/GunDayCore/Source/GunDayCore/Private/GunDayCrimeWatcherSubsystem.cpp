@@ -13,6 +13,7 @@
 #include "GunDayCoreSettings.h"
 #include "GunDayCrowdSubsystem.h"
 #include "GunDayDebug.h"
+#include "GunDayNewsSubsystem.h"
 #include "GunDayPoliceResponseSubsystem.h"
 #include "GunDaySocietySubsystem.h"
 #include "GunDayWantedSubsystem.h"
@@ -194,6 +195,11 @@ void UGunDayCrimeWatcherSubsystem::HandlePawnDestroyed(AActor* DestroyedActor)
 		if (Settings && Society)
 		{
 			Society->AddJeong(Settings->JeongOnPlayerKill);
+		}
+
+		if (UGunDayNewsSubsystem* News = GetWorld() ? GetWorld()->GetSubsystem<UGunDayNewsSubsystem>() : nullptr)
+		{
+			News->ReportShooting(true, true);
 		}
 	}
 }

@@ -49,6 +49,7 @@ GTA 가 라디오와 광고로 미국을 꼬집듯, 이 게임은 골목에서 �
 3. 군중 반응 (완료 — `UGunDayCrowdSubsystem`)
    시비 시스템 (완료 — `UGunDayDisputeSubsystem`, `AGunDayDisputeSpot`)
    정과 진영 (완료 — `UGunDaySocietySubsystem`)
+   뉴스 티커 (완료 — `UGunDayNewsSubsystem`)
 4. 골목 하나에서 경찰 둘과 1분간 총격전 — 첫 마일스톤.
    킷 데모 맵에서 검증 완료(2026-10-09): 재미있고 적당히 힘들다는 판단.
    남은 것은 그 1분을 City Sample 골목으로 옮기는 일이다.

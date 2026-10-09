@@ -43,6 +43,11 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 	, JeongCalmFactor(0.35f)
 	, MediationChanceAtFullJeong(0.7f)
 	, MediatorShotChance(0.25f)
+	, bEnableNews(true)
+	, NewsIntervalSeconds(35.0f)
+	, DayLengthSeconds(600.0f)
+	, BreakingNewsChance(0.35f)
+	, LowJeongNewsThreshold(25.0f)
 {
 	CrimeHeat.Add(EGunDayCrime::Brandishing, 10.0f);
 	CrimeHeat.Add(EGunDayCrime::PublicGunfire, 25.0f);
@@ -55,6 +60,46 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 
 	// 레벨 1~5 문턱값.
 	WantedLevelThresholds = { 20.0f, 80.0f, 180.0f, 320.0f, 500.0f };
+
+	// 뉴스 문구. 전부 자리표다. 작품의 목소리로 바꿔 쓴다.
+	BreakingTemplates = {
+		TEXT("[속보] 시내 모처서 총기 사고. 경찰 조사 중."),
+		TEXT("[속보] 또 총격. 오늘만 {오늘}번째."),
+		TEXT("[속보] 주차 시비 끝 발포. 목격자 \"늘 있는 일\"."),
+		TEXT("[속보] 총성 신고 접수. 출동 시간 평균 14분."),
+	};
+
+	PlayerBreakingTemplates = {
+		TEXT("[속보] 시민 1명 총기 사용. 신원 확인 중."),
+		TEXT("[속보] 목격자 \"그냥 지나가던 사람이었다\"."),
+		TEXT("[속보] 경찰, 용의자 추적 중. 시민들은 일상 유지."),
+	};
+
+	DailyTemplates = {
+		TEXT("{날}일차 집계 — 오늘 총기 사망 {오늘}명, 어제보다 {차이}명 {증감}."),
+		TEXT("{날}일차 — 누적 사망 {총}명. 시비 신고 {시비}건."),
+		TEXT("{날}일차 집계 — 사망 {오늘}명. 전문가 \"예년 수준\"."),
+	};
+
+	FillerTemplates = {
+		TEXT("오늘의 날씨, 맑음. 외출 시 안전에 유의하시기 바랍니다."),
+		TEXT("정부, 총기 안전 캠페인 예산 전년 대비 3% 증액."),
+		TEXT("보험업계 \"총기 특약 가입 문의 급증\"."),
+		TEXT("전문가 \"총이 문제가 아니라 사람이 문제\"."),
+		TEXT("다음 주 금리 동결 전망. 부동산 시장은 관망세."),
+		TEXT("방탄 조끼 할인전. 가정의 달 맞이 2+1."),
+		TEXT("국회, 총기법 개정안 논의 92일째 공전."),
+		TEXT("시민 설문 — \"이웃을 신뢰한다\" 19%, 역대 최저."),
+		TEXT("프로야구 소식입니다. 어제 경기는 정상 진행됐습니다."),
+	};
+
+	LowJeongTemplates = {
+		TEXT("시민 체감 안전도 조사, 응답률 저조로 중단."),
+		TEXT("\"요즘은 눈도 안 마주친다\" — 거리 인터뷰."),
+		TEXT("장례업계 호황. 관련주 사흘째 상승."),
+		TEXT("정부 \"사회 통합\" 표어 공모. 상금 300만원."),
+		TEXT("오늘도 평온한 하루였습니다. 내일 뵙겠습니다."),
+	};
 
 	// 축별 무게. 정치, 부동산, 세대, 지역, 성별.
 	FaultLineWeights = { 1.0f, 1.0f, 1.0f, 0.7f, 0.8f };

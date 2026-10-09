@@ -12,6 +12,7 @@
 #include "GunDayDisputeSubsystem.h"
 #include "GunDayEncounterSubsystem.h"
 #include "GunDayPoliceResponseSubsystem.h"
+#include "GunDayNewsSubsystem.h"
 #include "GunDaySocietySubsystem.h"
 #include "GunDayWantedSubsystem.h"
 #include "EngineUtils.h"
@@ -202,6 +203,28 @@ namespace
 
 			const bool bEnabled = (Args.Num() == 0) || (FCString::Atoi(*Args[0]) != 0);
 			Police->SetResponseEnabled(bEnabled);
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdNewsNext(
+		TEXT("GunDay.News.Next"),
+		TEXT("뉴스 한 줄을 지금 내보낸다."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>&, UWorld* World)
+		{
+			if (UGunDayNewsSubsystem* News = World ? World->GetSubsystem<UGunDayNewsSubsystem>() : nullptr)
+			{
+				News->PushFiller();
+			}
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdNewsDay(
+		TEXT("GunDay.News.Day"),
+		TEXT("하루를 넘겨 일일 집계를 내보낸다."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>&, UWorld* World)
+		{
+			if (UGunDayNewsSubsystem* News = World ? World->GetSubsystem<UGunDayNewsSubsystem>() : nullptr)
+			{
+				News->AdvanceDay();
+			}
 		}));
 
 	FAutoConsoleCommandWithWorldAndArgs CmdJeong(

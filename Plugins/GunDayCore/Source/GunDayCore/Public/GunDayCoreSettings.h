@@ -243,4 +243,44 @@ public:
 	/** 말리는 사람의 대사. */
 	UPROPERTY(config, EditAnywhere, Category = "정과 진영")
 	TArray<FString> MediationLines;
+
+	/** 뉴스 티커를 켠다. */
+	UPROPERTY(config, EditAnywhere, Category = "뉴스")
+	bool bEnableNews;
+
+	/** 사건이 없을 때 잡담이 지나가는 간격(초). */
+	UPROPERTY(config, EditAnywhere, Category = "뉴스", meta = (ClampMin = "1.0", Units = "s"))
+	float NewsIntervalSeconds;
+
+	/** 게임 안의 하루 길이(초). 이 시간이 지나면 일일 집계가 나온다. */
+	UPROPERTY(config, EditAnywhere, Category = "뉴스", meta = (ClampMin = "10.0", Units = "s"))
+	float DayLengthSeconds;
+
+	/** 총격 한 건이 속보로 나갈 확률. 매번 나오면 무심함이 사라진다. */
+	UPROPERTY(config, EditAnywhere, Category = "뉴스", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float BreakingNewsChance;
+
+	/** 이 값 아래로 정이 떨어지면 전용 문구가 섞인다. */
+	UPROPERTY(config, EditAnywhere, Category = "뉴스", meta = (ClampMin = "0.0", ClampMax = "100.0"))
+	float LowJeongNewsThreshold;
+
+	/** 속보 문구. 남이 쏜 경우. */
+	UPROPERTY(config, EditAnywhere, Category = "뉴스")
+	TArray<FString> BreakingTemplates;
+
+	/** 속보 문구. 플레이어가 쏜 경우. */
+	UPROPERTY(config, EditAnywhere, Category = "뉴스")
+	TArray<FString> PlayerBreakingTemplates;
+
+	/** 하루가 끝날 때의 집계 문구. */
+	UPROPERTY(config, EditAnywhere, Category = "뉴스")
+	TArray<FString> DailyTemplates;
+
+	/** 사건과 무관한 잡담. 광고, 논평, 날씨. 무심함은 여기서 나온다. */
+	UPROPERTY(config, EditAnywhere, Category = "뉴스")
+	TArray<FString> FillerTemplates;
+
+	/** 정이 바닥일 때만 나오는 문구. */
+	UPROPERTY(config, EditAnywhere, Category = "뉴스")
+	TArray<FString> LowJeongTemplates;
 };
