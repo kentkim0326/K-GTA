@@ -184,6 +184,40 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 		};
 		Store.FireChance = 0.5f;
 		DisputeScenarios.Add(Store);
+
+		// 대기형. 한쪽은 몇 달 전에 이미 결심하고 왔다.
+		// 조롱의 대상은 환자가 아니라 발뺌의 언어다.
+		FGunDayDisputeScenario Clinic;
+		Clinic.Name = TEXT("병원 대기실");
+		Clinic.Shape = EGunDayDisputeShape::Grievance;
+		Clinic.VerbalLines = {
+			TEXT("원장님 언제 나오세요. 세 시간째 기다리는데."),
+			TEXT("예약 없이 오시면 상담이 어렵습니다."),
+			TEXT("수술한 사람이 나한테 예약을 하래."),
+			TEXT("그건 제 담당이 아니라서요."),
+		};
+		Clinic.ShovingLines = {
+			TEXT("이거 보세요. 이게 사람 얼굴입니까."),
+			TEXT("경과는 개인차가 있습니다. 체질 문제도 있고요."),
+			TEXT("체질? 내 체질이 이렇게 만들었다고?"),
+		};
+		Clinic.DrawnLines = {
+			TEXT("…선생님, 진정하시고 앉으세요."),
+			TEXT("법적으로 가시면 됩니다. 저희도 변호사가 있고요."),
+			TEXT("세 번째 병원이야. 다들 똑같은 소리를 해."),
+		};
+		Clinic.ApologyLines = {
+			TEXT("…제가 집도했습니다. 죄송합니다."),
+			TEXT("다시 봐 드리겠습니다. 비용은 받지 않겠습니다."),
+		};
+		// 개인 원한이라 진영은 거의 상관없고, 말린다고 멎지 않는다.
+		Clinic.FrictionInfluence = 0.1f;
+		Clinic.MediationEffectiveness = 0.2f;
+		Clinic.ApologyChance = 0.15f;
+		Clinic.EscalateChance = 0.85f;
+		Clinic.FireChance = 0.7f;
+		Clinic.StageSeconds = 6.0f;
+		DisputeScenarios.Add(Clinic);
 	}
 
 	// 투입 인원 기본값. ResponderClass 는 비워 둔다.

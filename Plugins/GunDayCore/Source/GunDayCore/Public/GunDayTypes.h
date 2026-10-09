@@ -92,6 +92,25 @@ enum class EGunDayDisputeStage : uint8
 };
 
 /**
+ * 시비의 모양.
+ *
+ * 우발과 대기는 전혀 다른 사건이다.
+ * 주차 시비는 둘 다 그 자리에서 화가 난다. 진영이 다르면 더 크게 붙는다.
+ * 병원에 총을 들고 와 앉아 있는 사람은 몇 달 전에 이미 결심했다.
+ * 진영은 상관없고, 말린다고 멎지 않는다. 멎는 길은 상대가 인정하는 것뿐이다.
+ */
+UENUM(BlueprintType)
+enum class EGunDayDisputeShape : uint8
+{
+	/** 우발 — 그 자리에서 붙는다. */
+	Spark		UMETA(DisplayName = "우발"),
+	/** 대기 — 한쪽이 작정하고 왔다. */
+	Grievance	UMETA(DisplayName = "대기"),
+
+	MAX			UMETA(Hidden)
+};
+
+/**
  * 시비 한 종류. 주차, 담배, 노인석 같은 상황 하나를 적는다.
  *
  * 대사는 단계별로 한 줄씩 뽑아 쓴다. 비워 두면 그 단계에서는 말이 없다.
@@ -133,6 +152,29 @@ struct GUNDAYCORE_API FGunDayDisputeScenario
 	/** 한 발의 피해량. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (ClampMin = "0.0"))
 	float ShotDamage = 100.0f;
+
+	/** 우발인가 대기인가. 대기는 진영과 중재에 거의 영향받지 않는다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비")
+	EGunDayDisputeShape Shape = EGunDayDisputeShape::Spark;
+
+	/** 진영 차이가 이 시비에 얼마나 먹히는가. 0 이면 전혀 상관없는 개인 원한이다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float FrictionInfluence = 1.0f;
+
+	/** 말리는 것이 얼마나 먹히는가. 0 이면 누가 뭐라 해도 멎지 않는다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float MediationEffectiveness = 1.0f;
+
+	/**
+	 * 상대가 잘못을 인정해 가라앉을 확률. 단계마다 한 번씩 굴린다.
+	 * 대기형 시비가 멎는 거의 유일한 길이다. 발뺌하면 그 길이 닫힌다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float ApologyChance = 0.0f;
+
+	/** 인정하고 물러설 때의 대사. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (MultiLine = "true"))
+	TArray<FString> ApologyLines;
 };
 
 /**

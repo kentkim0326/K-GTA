@@ -295,10 +295,44 @@ void UGunDayDisputeSubsystem::AdvanceDispute(FGunDayActiveDispute& Dispute)
 	UGunDaySocietySubsystem* Society = GetWorld() ? GetWorld()->GetSubsystem<UGunDaySocietySubsystem>() : nullptr;
 	const UGunDayCoreSettings* Settings = GetSettings();
 
+	// 상대가 잘못을 인정하면 멎는다. 대기형 시비가 멎는 거의 유일한 길이다.
+	if (Scenario->ApologyChance > 0.0f && FMath::FRand() <= Scenario->ApologyChance)
+	{
+		if (Scenario->ApologyLines.Num() > 0)
+		{
+			APawn* Speaker = Dispute.Second.Get();
+			if (IsValid(Speaker))
+			{
+				const FString& Line = Scenario->ApologyLines[FMath::RandHelper(Scenario->ApologyLines.Num())];
+				OnDisputeLine.Broadcast(Speaker, Line, Dispute.Stage);
+
+				if (GunDayDebug::IsHUDEnabled())
+				{
+					if (UWorld* World = GetWorld())
+					{
+						DrawDebugString(World, FVector(0.0f, 0.0f, 120.0f), Line, Speaker,
+							FColor(150, 210, 150), 3.0f, true);
+					}
+				}
+			}
+		}
+
+		if (Society && Settings)
+		{
+			Society->AddJeong(Settings->JeongOnMediationSuccess);
+		}
+
+		UE_LOG(LogGunDay, Log, TEXT("시비: 상대가 인정해서 가라앉았다."));
+
+		Dispute.Stage = EGunDayDisputeStage::Resolved;
+		OnDisputeStageChanged.Broadcast(Dispute.First.Get(), Dispute.Second.Get(), Dispute.Stage);
+		return;
+	}
+
 	// 말리는 사람이 붙어 있으면 가라앉을 기회가 한 번 더 있다.
 	if (Dispute.Stage == EGunDayDisputeStage::Shoving && IsValid(Dispute.Mediator.Get()) && Society)
 	{
-		if (FMath::FRand() <= Society->GetJeongFraction())
+		if (FMath::FRand() <= Society->GetJeongFraction() * Scenario->MediationEffectiveness)
 		{
 			Society->AddJeong(Settings ? Settings->JeongOnMediationSuccess : 0.0f);
 			UE_LOG(LogGunDay, Log, TEXT("시비: 누가 말려서 가라앉았다."));
@@ -313,7 +347,7 @@ void UGunDayDisputeSubsystem::AdvanceDispute(FGunDayActiveDispute& Dispute)
 	float EscalateChance = Scenario->EscalateChance;
 	if (Settings)
 	{
-		EscalateChance *= (1.0f + Settings->FrictionEscalationWeight * Dispute.Friction);
+		EscalateChance *= (1.0f + Settings->FrictionEscalationWeight * Dispute.Friction * Scenario->FrictionInfluence);
 
 		if (Society)
 		{
