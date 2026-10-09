@@ -9,6 +9,7 @@
 | 베이스 | Third Person Shooter Kit v2.2 (Marcin Matuszczyk, 구매 완료) |
 | 자체 코드 | `Plugins/GunDayCore` |
 | 플랫폼 | Windows |
+| 프로젝트 | `GunsKorea.uproject` |
 
 인계 노트 전문은 [`docs/handover-2026-09-10.md`](docs/handover-2026-09-10.md) 에 있다.
 
@@ -16,7 +17,30 @@
 
 ## 처음 한 번 (PC에서)
 
-킷으로 만든 프로젝트가 `D:\Dev\KGTA` 에 있다고 가정한다. 경로에 한글과 띄어쓰기를 넣지 않는다.
+언리얼 프로젝트 이름은 **GunsKorea** (UE 5.8). 저장소 이름 `K-GTA` 는 작업용 식별자일 뿐이고
+프로젝트 폴더 이름과 같을 필요는 없다.
+
+### 0. 프로젝트 폴더를 옮긴다
+
+현재 위치: `C:\Users\LEMON AG\Documents\Unreal Projects\GunsKorea`
+
+여기 그대로 두면 두 가지가 걸린다.
+
+1. **`Documents` 는 OneDrive 동기화 대상인 경우가 많다.** 언리얼 프로젝트는 수십 기가이고
+   `Intermediate`, `DerivedDataCache` 가 빌드할 때마다 수만 개 파일을 쏟아낸다.
+   OneDrive 가 이걸 계속 업로드하려 들면 빌드가 느려지고 파일 잠금 오류가 난다.
+2. **경로에 띄어쓰기가 두 군데 있다** (`LEMON AG`, `Unreal Projects`).
+   엔진은 대개 견디지만 일부 빌드·패키징 툴과 셰이더 컴파일러가 걸린다.
+
+에디터를 닫고 폴더째 옮긴다.
+
+```bat
+mkdir C:\Dev
+move "C:\Users\LEMON AG\Documents\Unreal Projects\GunsKorea" C:\Dev\GunsKorea
+```
+
+옮긴 뒤 `C:\Dev\GunsKorea\GunsKorea.uproject` 를 더블클릭하면 그대로 열린다.
+언리얼은 절대 경로를 저장하지 않는다. SSD 가 D 드라이브라면 `D:\Dev\GunsKorea` 가 더 낫다.
 
 ### 1. Git LFS 먼저
 
@@ -29,7 +53,7 @@ git lfs install
 ### 2. 저장소를 프로젝트 폴더에 붙인다
 
 ```bat
-cd /d D:\Dev\KGTA
+cd /d C:\Dev\GunsKorea
 git init
 git remote add origin https://github.com/kentkim0326/K-GTA.git
 git fetch origin
