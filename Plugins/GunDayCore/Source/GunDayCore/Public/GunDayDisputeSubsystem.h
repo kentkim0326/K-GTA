@@ -36,6 +36,16 @@ struct FGunDayActiveDispute
 
 	/** 이번 단계에서 말할 차례. 둘이 번갈아 말한다. */
 	bool bFirstSpeaks = true;
+
+	/** 말리러 들어온 사람. 없을 수도 있다. */
+	UPROPERTY(BlueprintReadOnly, Category = "시비")
+	TWeakObjectPtr<APawn> Mediator;
+
+	/** 말릴 사람을 이미 찾아봤는가. 한 번만 시도한다. */
+	bool bMediationTried = false;
+
+	/** 이 시비의 마찰. 시작할 때 재서 들고 있는다. */
+	float Friction = 0.0f;
 };
 
 /**
@@ -117,8 +127,14 @@ private:
 	/** 이번 단계의 대사를 한 줄 내보낸다. */
 	void SpeakLine(FGunDayActiveDispute& Dispute);
 
+	/** 말릴 사람을 찾는다. 정이 높을수록 잘 나선다. */
+	void TryMediation(FGunDayActiveDispute& Dispute);
+
 	/** 총을 쏜다. 피해는 킷의 체력 시스템이 받는다. */
 	void FireShot(FGunDayActiveDispute& Dispute);
+
+	/** 첫 사람과 가장 세게 부딪히는 상대를 두 번째 자리로 올린다. */
+	void SortByFriction(TArray<APawn*>& People) const;
 
 	/** 반경 안의 시민을 모은다. 플레이어와 경찰과 이미 시비 중인 사람은 뺀다. */
 	void GatherCandidates(const FVector& Center, float Radius, TArray<APawn*>& OutPawns) const;

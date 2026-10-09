@@ -134,3 +134,37 @@ struct GUNDAYCORE_API FGunDayDisputeScenario
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (ClampMin = "0.0"))
 	float ShotDamage = 100.0f;
 };
+
+/**
+ * 사회의 금 간 자리. 시비는 아무나 붙는 것이 아니라 이 선을 따라 터진다.
+ *
+ * 층간소음으로 시작한 말다툼이 "그러니까 당신 같은 사람들이" 로 번지는 그 비약.
+ * 그 비약을 숫자로 만든 것이 진영 태그다.
+ */
+UENUM(BlueprintType)
+enum class EGunDayFaultLine : uint8
+{
+	Politics	UMETA(DisplayName = "정치"),
+	Property	UMETA(DisplayName = "부동산"),
+	Generation	UMETA(DisplayName = "세대"),
+	Region		UMETA(DisplayName = "지역"),
+	Gender		UMETA(DisplayName = "성별"),
+
+	MAX			UMETA(Hidden)
+};
+
+/**
+ * 사람 한 명의 진영. 축마다 어느 쪽에 서 있는지를 숫자로 들고 있다.
+ * 0 은 어느 쪽도 아님, 1 과 2 는 서로 반대편이다.
+ */
+USTRUCT(BlueprintType)
+struct GUNDAYCORE_API FGunDayPersonProfile
+{
+	GENERATED_BODY()
+
+	/** 축 순서는 EGunDayFaultLine 과 같다. */
+	UPROPERTY(BlueprintReadOnly, Category = "진영")
+	TArray<uint8> Positions;
+
+	bool IsValidProfile() const { return Positions.Num() == static_cast<int32>(EGunDayFaultLine::MAX); }
+};

@@ -32,6 +32,17 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 	, DisputeSearchRadius(4000.0f)
 	, MaxActiveDisputes(2)
 	, bStartDisputesWithoutSpots(true)
+	, StartingJeong(45.0f)
+	, BaselineJeong(45.0f)
+	, JeongRecoveryPerSecond(0.05f)
+	, JeongOnDisputeShot(-3.0f)
+	, JeongOnMediationSuccess(2.0f)
+	, JeongOnPlayerKill(-5.0f)
+	, NeutralPositionChance(0.3f)
+	, FrictionEscalationWeight(0.5f)
+	, JeongCalmFactor(0.35f)
+	, MediationChanceAtFullJeong(0.7f)
+	, MediatorShotChance(0.25f)
 {
 	CrimeHeat.Add(EGunDayCrime::Brandishing, 10.0f);
 	CrimeHeat.Add(EGunDayCrime::PublicGunfire, 25.0f);
@@ -44,6 +55,17 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 
 	// 레벨 1~5 문턱값.
 	WantedLevelThresholds = { 20.0f, 80.0f, 180.0f, 320.0f, 500.0f };
+
+	// 축별 무게. 정치, 부동산, 세대, 지역, 성별.
+	FaultLineWeights = { 1.0f, 1.0f, 1.0f, 0.7f, 0.8f };
+
+	// 말리는 사람의 대사. 이것도 자리표다.
+	MediationLines = {
+		TEXT("아유 됐어 그만해. 그만하라고."),
+		TEXT("여기서 이러지들 마요."),
+		TEXT("경찰 불러요 그냥. 네?"),
+		TEXT("두 분 다 진정하시고."),
+	};
 
 	// 시비 상황 기본값. 대사는 자리표다. 작품에 맞게 바꿔 쓴다.
 	{

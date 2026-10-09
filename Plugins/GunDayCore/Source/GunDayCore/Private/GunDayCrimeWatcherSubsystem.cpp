@@ -14,6 +14,7 @@
 #include "GunDayCrowdSubsystem.h"
 #include "GunDayDebug.h"
 #include "GunDayPoliceResponseSubsystem.h"
+#include "GunDaySocietySubsystem.h"
 #include "GunDayWantedSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -186,6 +187,14 @@ void UGunDayCrimeWatcherSubsystem::HandlePawnDestroyed(AActor* DestroyedActor)
 	{
 		const bool bPolice = IsPoliceActor(*DestroyedActor);
 		Wanted->ReportCrime(bPolice ? EGunDayCrime::PoliceKilled : EGunDayCrime::CivilianKilled);
+
+		// 사람이 죽을 때마다 사회의 온도가 내려간다.
+		const UGunDayCoreSettings* Settings = GetSettings();
+		UGunDaySocietySubsystem* Society = GetWorld() ? GetWorld()->GetSubsystem<UGunDaySocietySubsystem>() : nullptr;
+		if (Settings && Society)
+		{
+			Society->AddJeong(Settings->JeongOnPlayerKill);
+		}
 	}
 }
 

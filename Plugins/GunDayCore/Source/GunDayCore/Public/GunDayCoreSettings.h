@@ -191,4 +191,56 @@ public:
 	 */
 	UPROPERTY(config, EditAnywhere, Category = "시비")
 	TArray<FGunDayDisputeScenario> DisputeScenarios;
+
+	/** 게임을 시작할 때의 정. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영", meta = (ClampMin = "0.0", ClampMax = "100.0"))
+	float StartingJeong;
+
+	/** 아무 일도 없으면 돌아가는 기준값. 사람은 잊는다. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영", meta = (ClampMin = "0.0", ClampMax = "100.0"))
+	float BaselineJeong;
+
+	/** 기준값으로 돌아가는 속도(초당). */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영", meta = (ClampMin = "0.0"))
+	float JeongRecoveryPerSecond;
+
+	/** 시비 끝에 총이 오갔을 때 깎이는 정. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영")
+	float JeongOnDisputeShot;
+
+	/** 누가 말려서 시비가 가라앉았을 때 오르는 정. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영")
+	float JeongOnMediationSuccess;
+
+	/** 플레이어가 사람을 죽였을 때 깎이는 정. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영")
+	float JeongOnPlayerKill;
+
+	/** 어느 축에서도 어느 편도 아닐 확률. 높을수록 무색한 사람이 많아진다. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float NeutralPositionChance;
+
+	/** 축별 무게. 순서는 정치, 부동산, 세대, 지역, 성별. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영")
+	TArray<float> FaultLineWeights;
+
+	/** 진영이 다를수록 시비가 끝까지 갈 확률이 얼마나 오르는가. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영", meta = (ClampMin = "0.0"))
+	float FrictionEscalationWeight;
+
+	/** 정이 가득할 때 시비가 올라갈 확률에 곱하는 값. 작을수록 잘 가라앉는다. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float JeongCalmFactor;
+
+	/** 정이 가득할 때 누가 말리러 들어올 확률. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float MediationChanceAtFullJeong;
+
+	/** 말리러 들어온 사람이 총에 맞을 확률. 선의는 가끔 처벌받는다. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float MediatorShotChance;
+
+	/** 말리는 사람의 대사. */
+	UPROPERTY(config, EditAnywhere, Category = "정과 진영")
+	TArray<FString> MediationLines;
 };

@@ -14,6 +14,7 @@
 #include "GunDayDebug.h"
 #include "GunDayDisputeSpot.h"
 #include "GunDayPoliceResponseSubsystem.h"
+#include "GunDaySocietySubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
 UGunDayDisputeSubsystem* UGunDayDisputeSubsystem::Get(const UObject* WorldContextObject)
@@ -156,6 +157,8 @@ bool UGunDayDisputeSubsystem::TryStartDisputeAtSpot()
 			return false;
 		}
 
+		SortByFriction(People);
+
 		const int32 ScenarioIndex = (Spot->ScenarioIndices.Num() > 0)
 			? Spot->ScenarioIndices[FMath::RandHelper(Spot->ScenarioIndices.Num())]
 			: FMath::RandHelper(FMath::Max(1, Settings->DisputeScenarios.Num()));
@@ -189,6 +192,8 @@ bool UGunDayDisputeSubsystem::StartDisputeNearPlayer(int32 ScenarioIndex)
 		UE_LOG(LogGunDay, Warning, TEXT("시비: 주변에 시민이 둘 이상 없다."));
 		return false;
 	}
+
+	SortByFriction(People);
 
 	const int32 Index = (ScenarioIndex >= 0)
 		? ScenarioIndex
@@ -228,10 +233,16 @@ bool UGunDayDisputeSubsystem::BeginDispute(APawn& First, APawn& Second, int32 Sc
 	Dispute.ScenarioIndex = ScenarioIndex;
 	Dispute.Stage = EGunDayDisputeStage::Verbal;
 	Dispute.NextStageAtSeconds = ElapsedSeconds + Scenario->StageSeconds;
+
+	if (UGunDaySocietySubsystem* Society = GetWorld() ? GetWorld()->GetSubsystem<UGunDaySocietySubsystem>() : nullptr)
+	{
+		Dispute.Friction = Society->GetFriction(&First, &Second);
+	}
+
 	Active.Add(Dispute);
 
-	UE_LOG(LogGunDay, Log, TEXT("시비 발생: %s (%s vs %s)"),
-		*Scenario->Name, *First.GetName(), *Second.GetName());
+	UE_LOG(LogGunDay, Log, TEXT("시비 발생: %s (%s vs %s, 마찰 %.2f)"),
+		*Scenario->Name, *First.GetName(), *Second.GetName(), Dispute.Friction);
 
 	OnDisputeStageChanged.Broadcast(&First, &Second, EGunDayDisputeStage::Verbal);
 	SpeakLine(Active.Last());
@@ -275,20 +286,53 @@ void UGunDayDisputeSubsystem::AdvanceDispute(FGunDayActiveDispute& Dispute)
 		return;
 	}
 
-	// 확률을 못 넘으면 그 자리에서 가라앉는다.
-	if (FMath::FRand() > Scenario->EscalateChance)
+	UGunDaySocietySubsystem* Society = GetWorld() ? GetWorld()->GetSubsystem<UGunDaySocietySubsystem>() : nullptr;
+	const UGunDayCoreSettings* Settings = GetSettings();
+
+	// 말리는 사람이 붙어 있으면 가라앉을 기회가 한 번 더 있다.
+	if (Dispute.Stage == EGunDayDisputeStage::Shoving && IsValid(Dispute.Mediator.Get()) && Society)
+	{
+		if (FMath::FRand() <= Society->GetJeongFraction())
+		{
+			Society->AddJeong(Settings ? Settings->JeongOnMediationSuccess : 0.0f);
+			UE_LOG(LogGunDay, Log, TEXT("시비: 누가 말려서 가라앉았다."));
+
+			Dispute.Stage = EGunDayDisputeStage::Resolved;
+			OnDisputeStageChanged.Broadcast(Dispute.First.Get(), Dispute.Second.Get(), Dispute.Stage);
+			return;
+		}
+	}
+
+	// 진영이 다를수록 끝까지 가고, 정이 높을수록 가라앉는다.
+	float EscalateChance = Scenario->EscalateChance;
+	if (Settings)
+	{
+		EscalateChance *= (1.0f + Settings->FrictionEscalationWeight * Dispute.Friction);
+
+		if (Society)
+		{
+			EscalateChance *= FMath::Lerp(1.0f, Settings->JeongCalmFactor, Society->GetJeongFraction());
+		}
+	}
+
+	if (FMath::FRand() > FMath::Clamp(EscalateChance, 0.0f, 1.0f))
 	{
 		Dispute.Stage = EGunDayDisputeStage::Resolved;
 		OnDisputeStageChanged.Broadcast(Dispute.First.Get(), Dispute.Second.Get(), Dispute.Stage);
 		return;
 	}
 
-	Dispute.Stage = (Dispute.Stage == EGunDayDisputeStage::Verbal)
-		? EGunDayDisputeStage::Shoving
-		: EGunDayDisputeStage::Drawn;
+	const bool bWasVerbal = (Dispute.Stage == EGunDayDisputeStage::Verbal);
+	Dispute.Stage = bWasVerbal ? EGunDayDisputeStage::Shoving : EGunDayDisputeStage::Drawn;
 
 	OnDisputeStageChanged.Broadcast(Dispute.First.Get(), Dispute.Second.Get(), Dispute.Stage);
 	SpeakLine(Dispute);
+
+	// 몸싸움이 되면 누가 말리러 나설 수 있다.
+	if (bWasVerbal)
+	{
+		TryMediation(Dispute);
+	}
 }
 
 void UGunDayDisputeSubsystem::SpeakLine(FGunDayActiveDispute& Dispute)
@@ -345,8 +389,24 @@ void UGunDayDisputeSubsystem::FireShot(FGunDayActiveDispute& Dispute)
 		return;
 	}
 
+	const UGunDayCoreSettings* Settings = GetSettings();
+	UGunDaySocietySubsystem* Society = GetWorld() ? GetWorld()->GetSubsystem<UGunDaySocietySubsystem>() : nullptr;
+
+	// 말리던 사람이 대신 맞기도 한다. 선의는 가끔 처벌받는다.
+	APawn* Mediator = Dispute.Mediator.Get();
+	if (Settings && IsValid(Mediator) && FMath::FRand() <= Settings->MediatorShotChance)
+	{
+		Victim = Mediator;
+		UE_LOG(LogGunDay, Log, TEXT("시비: 말리던 사람이 맞았다."));
+	}
+
 	// 먼저 꺼낸 쪽이 먼저 쏜다고 본다. 번갈아 말하다 끝난 쪽이 쏘게 해도 된다.
 	UGameplayStatics::ApplyDamage(Victim, Scenario->ShotDamage, Shooter->GetController(), Shooter, nullptr);
+
+	if (Society && Settings)
+	{
+		Society->AddJeong(Settings->JeongOnDisputeShot);
+	}
 
 	UE_LOG(LogGunDay, Log, TEXT("시비 발포: %s 가 %s 를 쐈다 (%s)"),
 		*Shooter->GetName(), *Victim->GetName(), *Scenario->Name);
@@ -358,6 +418,82 @@ void UGunDayDisputeSubsystem::FireShot(FGunDayActiveDispute& Dispute)
 	{
 		Crowd->NotifyGunshot(Shooter->GetActorLocation());
 	}
+}
+
+void UGunDayDisputeSubsystem::TryMediation(FGunDayActiveDispute& Dispute)
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	UGunDaySocietySubsystem* Society = GetWorld() ? GetWorld()->GetSubsystem<UGunDaySocietySubsystem>() : nullptr;
+	APawn* First = Dispute.First.Get();
+	if (!Settings || !Society || Dispute.bMediationTried || !IsValid(First))
+	{
+		return;
+	}
+
+	Dispute.bMediationTried = true;
+
+	// 정이 낮으면 아무도 나서지 않는다. 그게 이 사회의 상태다.
+	const float Chance = Settings->MediationChanceAtFullJeong * Society->GetJeongFraction();
+	if (FMath::FRand() > Chance)
+	{
+		return;
+	}
+
+	TArray<APawn*> Nearby;
+	GatherCandidates(First->GetActorLocation(), Settings->DisputeSearchRadius * 0.3f, Nearby);
+	if (Nearby.Num() == 0)
+	{
+		return;
+	}
+
+	APawn* Mediator = Nearby[0];
+	Dispute.Mediator = Mediator;
+
+	if (AAIController* Controller = Cast<AAIController>(Mediator->GetController()))
+	{
+		Controller->MoveToActor(First, 150.0f);
+	}
+
+	if (Settings->MediationLines.Num() > 0)
+	{
+		const FString& Line = Settings->MediationLines[FMath::RandHelper(Settings->MediationLines.Num())];
+		OnDisputeLine.Broadcast(Mediator, Line, Dispute.Stage);
+
+		if (GunDayDebug::IsHUDEnabled())
+		{
+			if (UWorld* World = GetWorld())
+			{
+				DrawDebugString(World, FVector(0.0f, 0.0f, 120.0f), Line, Mediator,
+					FColor(150, 210, 150), 3.0f, true);
+			}
+		}
+	}
+}
+
+void UGunDayDisputeSubsystem::SortByFriction(TArray<APawn*>& People) const
+{
+	UGunDaySocietySubsystem* Society = GetWorld() ? GetWorld()->GetSubsystem<UGunDaySocietySubsystem>() : nullptr;
+	if (!Society || People.Num() < 3)
+	{
+		return;
+	}
+
+	// 첫 사람과 가장 세게 부딪히는 상대를 두 번째 자리로 끌어온다.
+	APawn* First = People[0];
+	int32 BestIndex = 1;
+	float BestFriction = -1.0f;
+
+	for (int32 Index = 1; Index < People.Num(); ++Index)
+	{
+		const float Friction = Society->GetFriction(First, People[Index]);
+		if (Friction > BestFriction)
+		{
+			BestFriction = Friction;
+			BestIndex = Index;
+		}
+	}
+
+	People.Swap(1, BestIndex);
 }
 
 void UGunDayDisputeSubsystem::GatherCandidates(const FVector& Center, float Radius, TArray<APawn*>& OutPawns) const

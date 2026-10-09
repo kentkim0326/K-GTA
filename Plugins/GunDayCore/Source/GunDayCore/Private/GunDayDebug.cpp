@@ -12,7 +12,9 @@
 #include "GunDayDisputeSubsystem.h"
 #include "GunDayEncounterSubsystem.h"
 #include "GunDayPoliceResponseSubsystem.h"
+#include "GunDaySocietySubsystem.h"
 #include "GunDayWantedSubsystem.h"
+#include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 #include "HAL/IConsoleManager.h"
 #include "Kismet/GameplayStatics.h"
@@ -200,6 +202,55 @@ namespace
 
 			const bool bEnabled = (Args.Num() == 0) || (FCString::Atoi(*Args[0]) != 0);
 			Police->SetResponseEnabled(bEnabled);
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdJeong(
+		TEXT("GunDay.Jeong"),
+		TEXT("사회의 정을 0~100 으로 맞춘다. 인자가 없으면 지금 값을 로그에 찍는다."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			UGunDaySocietySubsystem* Society = World ? World->GetSubsystem<UGunDaySocietySubsystem>() : nullptr;
+			if (!Society)
+			{
+				return;
+			}
+
+			if (Args.Num() == 0)
+			{
+				UE_LOG(LogGunDay, Log, TEXT("정(情) %.1f"), Society->GetJeong());
+				return;
+			}
+
+			Society->SetJeong(FCString::Atof(*Args[0]));
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdProfile(
+		TEXT("GunDay.Profile"),
+		TEXT("주변 사람들의 진영을 로그에 찍는다."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>&, UWorld* World)
+		{
+			UGunDaySocietySubsystem* Society = World ? World->GetSubsystem<UGunDaySocietySubsystem>() : nullptr;
+			const APawn* Player = World ? UGameplayStatics::GetPlayerPawn(World, 0) : nullptr;
+			if (!Society || !Player)
+			{
+				return;
+			}
+
+			for (TActorIterator<APawn> It(World); It; ++It)
+			{
+				APawn* Pawn = *It;
+				if (!IsValid(Pawn) || Pawn == Player)
+				{
+					continue;
+				}
+
+				if (FVector::Dist(Pawn->GetActorLocation(), Player->GetActorLocation()) > 4000.0f)
+				{
+					continue;
+				}
+
+				UE_LOG(LogGunDay, Log, TEXT("%s — %s"), *Pawn->GetName(), *Society->DescribeProfile(Pawn));
+			}
 		}));
 
 	FAutoConsoleCommandWithWorldAndArgs CmdDisputeStart(
