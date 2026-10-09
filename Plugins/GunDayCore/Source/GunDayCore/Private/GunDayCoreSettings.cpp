@@ -218,6 +218,70 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 		Clinic.FireChance = 0.7f;
 		Clinic.StageSeconds = 6.0f;
 		DisputeScenarios.Add(Clinic);
+
+		// 대기형. 돈이 묶인 사람과 서류의 언어.
+		FGunDayDisputeScenario Lease;
+		Lease.Name = TEXT("전세 사기");
+		Lease.Shape = EGunDayDisputeShape::Grievance;
+		Lease.VerbalLines = {
+			TEXT("보증금 언제 주실 겁니까. 이사 날짜가 지났는데."),
+			TEXT("저희도 피해자예요. 집주인이 연락이 안 돼서."),
+			TEXT("계약서에 중개사 도장 찍혀 있잖아요."),
+			TEXT("그건 단순 중개였고요, 책임 범위가 다릅니다."),
+		};
+		Lease.ShovingLines = {
+			TEXT("내 전 재산이에요. 전 재산."),
+			TEXT("그래서 보증보험 드시라고 말씀드렸는데."),
+			TEXT("들라고 한 적 없잖아. 괜찮다고 했잖아."),
+		};
+		Lease.DrawnLines = {
+			TEXT("…사장님, 이러시면 더 복잡해집니다."),
+			TEXT("소송하시면 됩니다. 삼 년이면 나와요."),
+			TEXT("삼 년. 애가 학교를 어떻게 다니는데."),
+		};
+		Lease.ApologyLines = {
+			TEXT("…제가 알고 있었습니다. 변제 계획을 쓰겠습니다."),
+			TEXT("오늘 안에 집주인 데려오겠습니다. 약속합니다."),
+		};
+		Lease.FrictionInfluence = 0.15f;
+		Lease.MediationEffectiveness = 0.25f;
+		Lease.ApologyChance = 0.12f;
+		Lease.EscalateChance = 0.85f;
+		Lease.FireChance = 0.7f;
+		Lease.StageSeconds = 6.0f;
+		DisputeScenarios.Add(Lease);
+
+		// 대기형. 당사자는 어른들이다. 조롱의 대상은 처리 절차의 언어다.
+		FGunDayDisputeScenario School;
+		School.Name = TEXT("학폭 처리");
+		School.Shape = EGunDayDisputeShape::Grievance;
+		School.VerbalLines = {
+			TEXT("심의위원회가 세 번 연기됐습니다. 세 번이요."),
+			TEXT("절차가 있어서요. 저희도 규정대로 해야 합니다."),
+			TEXT("우리 애는 지금 학교를 못 가요."),
+			TEXT("전학 권고도 방법입니다. 아이를 위해서."),
+		};
+		School.ShovingLines = {
+			TEXT("왜 우리가 전학을 가요. 왜."),
+			TEXT("쌍방으로 처리되면 양쪽 다 기록이 남습니다."),
+			TEXT("쌍방? 맞은 쪽이랑 때린 쪽이 쌍방이에요?"),
+		};
+		School.DrawnLines = {
+			TEXT("…어머님, 여기 학교입니다."),
+			TEXT("서면 사과 권고로 종결하는 게 서로 좋습니다."),
+			TEXT("서면. 종이 한 장."),
+		};
+		School.ApologyLines = {
+			TEXT("…제가 미뤘습니다. 이번 주에 열겠습니다."),
+			TEXT("기록 남기고 정식으로 처리하겠습니다. 죄송합니다."),
+		};
+		School.FrictionInfluence = 0.1f;
+		School.MediationEffectiveness = 0.3f;
+		School.ApologyChance = 0.18f;
+		School.EscalateChance = 0.8f;
+		School.FireChance = 0.6f;
+		School.StageSeconds = 6.0f;
+		DisputeScenarios.Add(School);
 	}
 
 	// 투입 인원 기본값. ResponderClass 는 비워 둔다.
