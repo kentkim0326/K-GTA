@@ -282,6 +282,70 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 		School.FireChance = 0.6f;
 		School.StageSeconds = 6.0f;
 		DisputeScenarios.Add(School);
+
+		// 대기형. 다친 사람과 서류상 소속의 언어.
+		FGunDayDisputeScenario Industrial;
+		Industrial.Name = TEXT("산재 은폐");
+		Industrial.Shape = EGunDayDisputeShape::Grievance;
+		Industrial.VerbalLines = {
+			TEXT("산재 신청서에 확인 도장 언제 찍어 주십니까."),
+			TEXT("공상으로 처리하자고 말씀드렸잖아요. 그게 빠릅니다."),
+			TEXT("빠른 게 아니고 기록이 안 남는 거죠."),
+			TEXT("선생님은 저희 소속이 아니라서요. 하청에 말씀하세요."),
+		};
+		Industrial.ShovingLines = {
+			TEXT("손가락이에요. 세 개."),
+			TEXT("안전교육 이수 서류에 서명하셨고요."),
+			TEXT("그 서류 받은 날이 사고 다음 날이잖아."),
+		};
+		Industrial.DrawnLines = {
+			TEXT("…여기 현장입니다. 사람들 봅니다."),
+			TEXT("재해 경위상 본인 부주의 비율이 있습니다."),
+			TEXT("부주의. 열두 시간째 서 있었는데."),
+		};
+		Industrial.ApologyLines = {
+			TEXT("…제가 막았습니다. 오늘 도장 찍겠습니다."),
+			TEXT("원청에 보고하겠습니다. 소속도 바로잡겠습니다."),
+		};
+		Industrial.FrictionInfluence = 0.1f;
+		Industrial.MediationEffectiveness = 0.25f;
+		Industrial.ApologyChance = 0.14f;
+		Industrial.EscalateChance = 0.82f;
+		Industrial.FireChance = 0.65f;
+		Industrial.StageSeconds = 6.0f;
+		DisputeScenarios.Add(Industrial);
+
+		// 대기형. 약관의 언어. 숫자와 조항으로 사람을 돌려보낸다.
+		FGunDayDisputeScenario Insurance;
+		Insurance.Name = TEXT("보험금 거절");
+		Insurance.Shape = EGunDayDisputeShape::Grievance;
+		Insurance.VerbalLines = {
+			TEXT("부지급 통보서 받았습니다. 설명 좀 해 주세요."),
+			TEXT("심사 결과가 그렇게 나왔습니다. 저는 전달만 합니다."),
+			TEXT("십이 년을 냈어요. 한 번도 안 밀리고."),
+			TEXT("납입 이력과 지급 심사는 별개 사안입니다."),
+		};
+		Insurance.ShovingLines = {
+			TEXT("기왕증이라니. 그런 말은 처음 듣는데."),
+			TEXT("고지의무 위반 소지가 있어서요. 약관 제3조."),
+			TEXT("그 약관 설명해 준 사람 아무도 없었어요."),
+		};
+		Insurance.DrawnLines = {
+			TEXT("…고객님, CCTV 돌아갑니다."),
+			TEXT("분쟁조정 신청하시면 됩니다. 평균 칠 개월이고요."),
+			TEXT("칠 개월. 수술은 다음 주인데."),
+		};
+		Insurance.ApologyLines = {
+			TEXT("…재심사 올리겠습니다. 제 이름으로 올립니다."),
+			TEXT("약관 설명 누락이 맞습니다. 지급으로 정리하겠습니다."),
+		};
+		Insurance.FrictionInfluence = 0.1f;
+		Insurance.MediationEffectiveness = 0.3f;
+		Insurance.ApologyChance = 0.16f;
+		Insurance.EscalateChance = 0.8f;
+		Insurance.FireChance = 0.6f;
+		Insurance.StageSeconds = 6.0f;
+		DisputeScenarios.Add(Insurance);
 	}
 
 	// 투입 인원 기본값. ResponderClass 는 비워 둔다.
