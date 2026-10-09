@@ -25,6 +25,8 @@ class UGunDayWantedSubsystem;
  *   GunDay.Alley.Start      1분 총격전 측정 시작
  *   GunDay.Alley.Stop       측정 중단
  *   GunDay.Alley.Result     지난 판 결과 다시 보기
+ *   GunDay.Dispute.Start    주변 시민 둘로 시비 일으키기
+ *   GunDay.Dispute.Clear    진행 중인 시비 끝내기
  */
 namespace GunDayDebug
 {

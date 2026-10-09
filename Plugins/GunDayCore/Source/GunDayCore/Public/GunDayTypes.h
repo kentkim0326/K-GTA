@@ -72,3 +72,65 @@ struct GUNDAYCORE_API FGunDayResponseTier
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "경찰 대응", meta = (ClampMin = "0.0"))
 	float DespawnDistance = 12000.0f;
 };
+
+/** 시비의 단계. 아래로 갈수록 되돌릴 수 없다. */
+UENUM(BlueprintType)
+enum class EGunDayDisputeStage : uint8
+{
+	/** 말다툼. 욕이 오간다. */
+	Verbal		UMETA(DisplayName = "말다툼"),
+	/** 밀치고 멱살을 잡는다. */
+	Shoving		UMETA(DisplayName = "몸싸움"),
+	/** 한쪽이 총을 꺼냈다. 여기서부터는 돌이키기 어렵다. */
+	Drawn		UMETA(DisplayName = "총 꺼냄"),
+	/** 쐈다. */
+	Shooting	UMETA(DisplayName = "발포"),
+	/** 끝났다. 가라앉았거나 누가 쓰러졌다. */
+	Resolved	UMETA(DisplayName = "종료"),
+
+	MAX			UMETA(Hidden)
+};
+
+/**
+ * 시비 한 종류. 주차, 담배, 노인석 같은 상황 하나를 적는다.
+ *
+ * 대사는 단계별로 한 줄씩 뽑아 쓴다. 비워 두면 그 단계에서는 말이 없다.
+ * 내용은 작품에 맞게 직접 채운다. 기본값은 자리를 잡아 두기 위한 예시다.
+ */
+USTRUCT(BlueprintType)
+struct GUNDAYCORE_API FGunDayDisputeScenario
+{
+	GENERATED_BODY()
+
+	/** 상황 이름. 로그와 디버그 표시에 쓴다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비")
+	FString Name;
+
+	/** 말다툼 단계의 대사. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (MultiLine = "true"))
+	TArray<FString> VerbalLines;
+
+	/** 몸싸움 단계의 대사. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (MultiLine = "true"))
+	TArray<FString> ShovingLines;
+
+	/** 총을 꺼낸 단계의 대사. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (MultiLine = "true"))
+	TArray<FString> DrawnLines;
+
+	/** 한 단계에 머무는 시간(초). 뜸을 들여야 무섭다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (ClampMin = "0.5", Units = "s"))
+	float StageSeconds = 4.0f;
+
+	/** 다음 단계로 올라갈 확률. 못 넘으면 그 자리에서 가라앉는다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float EscalateChance = 0.7f;
+
+	/** 총을 꺼낸 뒤 실제로 쏠 확률. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float FireChance = 0.6f;
+
+	/** 한 발의 피해량. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (ClampMin = "0.0"))
+	float ShotDamage = 100.0f;
+};

@@ -23,11 +23,21 @@ Unreal Engine 5.8 프로젝트. 배경과 결정 사항은 `docs/handover-2026-0
 - 튜닝 값은 코드에 상수로 박지 말고 `UGunDayCoreSettings` 에 `UPROPERTY(config, EditAnywhere)` 로 낸다.
 - 주석과 커밋 메시지는 한국어로 쓴다.
 
+## 작품
+
+원작은 김형섭 소설 《총기허용의 날》. 한국에 총기가 허용되면 무슨 일이 벌어지는가를
+사소한 사건들로 보여 준다. 주차 시비, 담배 훈계, 노인석, 편의점 라면.
+
+**플레이어가 특별한 세계가 아니다.** 누구나 총을 가졌고 아무나 쏜다.
+그래서 시비 시스템이 이 게임의 중심이다. 총격전은 그 결과일 뿐이다.
+현실성은 총이 아니라 그 앞에 오가는 말에서 나온다.
+
 ## 우선순위
 
 1. 수배 레벨 시스템 (완료 — `UGunDayWantedSubsystem`)
 2. 경찰 대응 배선 (완료 — `UGunDayPoliceResponseSubsystem`)
 3. 군중 반응 (완료 — `UGunDayCrowdSubsystem`)
+   시비 시스템 (완료 — `UGunDayDisputeSubsystem`, `AGunDayDisputeSpot`)
 4. 골목 하나에서 경찰 둘과 1분간 총격전 — 첫 마일스톤.
    킷 데모 맵에서 검증 완료(2026-10-09): 재미있고 적당히 힘들다는 판단.
    남은 것은 그 1분을 City Sample 골목으로 옮기는 일이다.

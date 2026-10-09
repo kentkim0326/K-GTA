@@ -9,6 +9,7 @@
 #include "GunDayCoreSettings.h"
 #include "GunDayCrimeWatcherSubsystem.h"
 #include "GunDayCrowdSubsystem.h"
+#include "GunDayDisputeSubsystem.h"
 #include "GunDayEncounterSubsystem.h"
 #include "GunDayPoliceResponseSubsystem.h"
 #include "GunDayWantedSubsystem.h"
@@ -199,6 +200,47 @@ namespace
 
 			const bool bEnabled = (Args.Num() == 0) || (FCString::Atoi(*Args[0]) != 0);
 			Police->SetResponseEnabled(bEnabled);
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdDisputeStart(
+		TEXT("GunDay.Dispute.Start"),
+		TEXT("주변 시민 둘로 시비를 일으킨다. 인자로 상황 번호를 줄 수 있다. 예: GunDay.Dispute.Start 1"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			UGunDayDisputeSubsystem* Dispute = World ? World->GetSubsystem<UGunDayDisputeSubsystem>() : nullptr;
+			if (!Dispute)
+			{
+				return;
+			}
+
+			const int32 ScenarioIndex = (Args.Num() > 0) ? FCString::Atoi(*Args[0]) : -1;
+			Dispute->StartDisputeNearPlayer(ScenarioIndex);
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdDisputeClear(
+		TEXT("GunDay.Dispute.Clear"),
+		TEXT("진행 중인 시비를 전부 끝낸다."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>&, UWorld* World)
+		{
+			if (UGunDayDisputeSubsystem* Dispute = World ? World->GetSubsystem<UGunDayDisputeSubsystem>() : nullptr)
+			{
+				Dispute->ClearDisputes();
+			}
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdDisputeEnabled(
+		TEXT("GunDay.Dispute.Enabled"),
+		TEXT("시비 발생을 켜고 끈다. 예: GunDay.Dispute.Enabled 0"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			UGunDayDisputeSubsystem* Dispute = World ? World->GetSubsystem<UGunDayDisputeSubsystem>() : nullptr;
+			if (!Dispute)
+			{
+				return;
+			}
+
+			const bool bEnabled = (Args.Num() == 0) || (FCString::Atoi(*Args[0]) != 0);
+			Dispute->SetDisputesEnabled(bEnabled);
 		}));
 
 	FAutoConsoleCommandWithWorldAndArgs CmdAlleyStart(

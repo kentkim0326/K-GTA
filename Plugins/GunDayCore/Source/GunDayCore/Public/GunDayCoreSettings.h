@@ -160,4 +160,35 @@ public:
 	 */
 	UPROPERTY(config, EditAnywhere, Category = "군중 반응")
 	TArray<TSoftClassPtr<APawn>> CivilianClasses;
+
+	/** 시민끼리의 시비를 일으킨다. */
+	UPROPERTY(config, EditAnywhere, Category = "시비")
+	bool bEnableDisputes;
+
+	/** 새 시비를 일으킬지 판정하는 간격(초). */
+	UPROPERTY(config, EditAnywhere, Category = "시비", meta = (ClampMin = "1.0", Units = "s"))
+	float DisputeIntervalSeconds;
+
+	/** 플레이어로부터 이 반경 안의 시비 지점과 시민만 본다. */
+	UPROPERTY(config, EditAnywhere, Category = "시비", meta = (ClampMin = "0.0"))
+	float DisputeSearchRadius;
+
+	/** 동시에 진행할 수 있는 시비 수. */
+	UPROPERTY(config, EditAnywhere, Category = "시비", meta = (ClampMin = "0"))
+	int32 MaxActiveDisputes;
+
+	/**
+	 * 레벨에 시비 지점(AGunDayDisputeSpot)이 하나도 없을 때
+	 * 플레이어 주변 시민 중 아무나 골라 시비를 일으킨다.
+	 * 골목마다 자리를 놓고 나면 꺼도 된다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "시비")
+	bool bStartDisputesWithoutSpots;
+
+	/**
+	 * 시비 상황 목록. 주차, 담배, 노인석, 편의점.
+	 * 대사는 작품에 맞게 직접 고친다. 기본값은 구조를 보여 주기 위한 자리표다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "시비")
+	TArray<FGunDayDisputeScenario> DisputeScenarios;
 };
