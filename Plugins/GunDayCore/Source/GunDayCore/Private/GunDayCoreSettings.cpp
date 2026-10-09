@@ -11,6 +11,10 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 	, bSpawnResponders(true)
 	, bDismissRespondersOnClear(true)
 	, bRespondersCountAsWitnesses(true)
+	, bAutoReportCrimes(true)
+	, PawnRescanIntervalSeconds(2.0f)
+	, InjuryReportCooldownSeconds(1.5f)
+	, GunfireReportCooldownSeconds(1.0f)
 {
 	CrimeHeat.Add(EGunDayCrime::Brandishing, 10.0f);
 	CrimeHeat.Add(EGunDayCrime::PublicGunfire, 25.0f);

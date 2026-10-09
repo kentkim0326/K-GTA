@@ -76,4 +76,30 @@ public:
 	 */
 	UPROPERTY(config, EditAnywhere, Category = "경찰 대응")
 	bool bRespondersCountAsWitnesses;
+
+	/**
+	 * 플레이어가 입힌 피해를 자동으로 범죄로 신고한다.
+	 * 끄면 콘솔이나 블루프린트에서 직접 ReportCrime 을 불러야 한다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "범죄 감지")
+	bool bAutoReportCrimes;
+
+	/** 새로 생긴 폰에 피해 이벤트를 거는 주기(초). 짧을수록 반응이 빠르고 비용이 든다. */
+	UPROPERTY(config, EditAnywhere, Category = "범죄 감지", meta = (ClampMin = "0.1", Units = "s"))
+	float PawnRescanIntervalSeconds;
+
+	/** 같은 상대에 대한 부상 신고 간격(초). 연사 한 번에 수배가 치솟는 것을 막는다. */
+	UPROPERTY(config, EditAnywhere, Category = "범죄 감지", meta = (ClampMin = "0.0", Units = "s"))
+	float InjuryReportCooldownSeconds;
+
+	/** 발포 신고 간격(초). ReportPlayerGunfire 에 걸린다. */
+	UPROPERTY(config, EditAnywhere, Category = "범죄 감지", meta = (ClampMin = "0.0", Units = "s"))
+	float GunfireReportCooldownSeconds;
+
+	/**
+	 * 경찰로 칠 액터 클래스. 여기 든 상대를 쏘면 시민이 아니라 경찰로 신고된다.
+	 * 투입 명단에 있는 상대는 이 목록이 비어 있어도 경찰로 친다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "범죄 감지")
+	TArray<TSoftClassPtr<AActor>> PoliceClasses;
 };

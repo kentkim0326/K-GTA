@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "GunDayCore.h"
 #include "GunDayCoreSettings.h"
+#include "GunDayCrimeWatcherSubsystem.h"
 #include "GunDayPoliceResponseSubsystem.h"
 #include "GunDayWantedSubsystem.h"
 #include "HAL/IConsoleManager.h"
@@ -194,6 +195,21 @@ namespace
 
 			const bool bEnabled = (Args.Num() == 0) || (FCString::Atoi(*Args[0]) != 0);
 			Police->SetResponseEnabled(bEnabled);
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdAutoReport(
+		TEXT("GunDay.AutoReport"),
+		TEXT("플레이어가 입힌 피해의 자동 신고를 켜고 끈다. 예: GunDay.AutoReport 0"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			UGunDayCrimeWatcherSubsystem* Watcher = World ? World->GetSubsystem<UGunDayCrimeWatcherSubsystem>() : nullptr;
+			if (!Watcher)
+			{
+				return;
+			}
+
+			const bool bEnabled = (Args.Num() == 0) || (FCString::Atoi(*Args[0]) != 0);
+			Watcher->SetWatchEnabled(bEnabled);
 		}));
 
 	/** 수배 레벨별 색. 0 은 회색, 올라갈수록 붉어진다. */

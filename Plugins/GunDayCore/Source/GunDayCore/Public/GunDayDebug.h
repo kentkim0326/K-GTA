@@ -19,6 +19,7 @@ class UGunDayWantedSubsystem;
  *   GunDay.Clear            수배 해제
  *   GunDay.Police.Dismiss   투입된 경찰 전부 치우기
  *   GunDay.Police.Enabled 0 경찰 투입 끄기
+ *   GunDay.AutoReport 0     피해 자동 신고 끄기
  */
 namespace GunDayDebug
 {
