@@ -1,6 +1,7 @@
 # K-GTA 작업 지침
 
-Unreal Engine 5.8 프로젝트. 배경과 결정 사항은 `docs/handover-2026-09-10.md` 를 먼저 읽는다.
+Unreal Engine 5.8 프로젝트. 배경과 결정 사항은 `docs/handover-2026-10-09.md` 를 먼저 읽는다.
+(그 이전 배경은 `docs/handover-2026-09-10.md`.)
 
 ## 지켜야 할 것
 
