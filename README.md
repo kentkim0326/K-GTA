@@ -116,6 +116,25 @@ Visual Studio 2022 와 Windows SDK 가 필요하다.
 
 값은 전부 **프로젝트 세팅 > Game > GunDay Core** 에서 만진다. 코드 수정 없이 조율한다.
 
+### 디버그 HUD 와 콘솔 명령
+
+블루프린트 배선 없이 수배 레벨 시스템을 바로 확인할 수 있다.
+플레이 중 물결표(`~`) 키로 콘솔을 열고 입력한다.
+
+| 명령 | 하는 일 |
+|---|---|
+| `GunDay.ShowDebug 1` | 화면에 수배 레벨, 열기, 감소 상태를 띄운다 |
+| `GunDay.Fire` | 공공장소 발포 한 번 |
+| `GunDay.ReportCrime PoliceKilled` | 범죄 한 건. 이름 대신 번호도 된다 |
+| `GunDay.AddHeat 50` | 열기를 직접 더한다. 음수면 깎인다 |
+| `GunDay.SetWanted 3` | 수배 레벨을 강제로 맞춘다 |
+| `GunDay.Witness 1` | 목격자를 늘린다. `-1` 이면 줄인다 |
+| `GunDay.Clear` | 수배와 목격자를 전부 지운다 |
+
+확인해 볼 흐름은 이렇다. `GunDay.ShowDebug 1` 로 HUD 를 켜고 `GunDay.Fire` 를 몇 번 치면
+열기가 쌓이고 별이 늘어난다. 그대로 두면 회피 대기 시간이 지난 뒤 열기가 줄고 별이 빠진다.
+`GunDay.Witness 1` 로 목격자를 붙여 두면 줄지 않는다. `GunDay.Witness -1` 로 떼면 다시 준다.
+
 ### 다음
 
 1. 경찰 대응 배선 — 수배 레벨별로 어떤 AI 스포너와 인카운터를 호출할지. 인지는 AI Perception, 판단은 StateTree.

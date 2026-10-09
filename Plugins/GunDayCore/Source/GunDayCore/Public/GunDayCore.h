@@ -1,4 +1,4 @@
-// Copyright K-GTA. All Rights Reserved.
+﻿// Copyright K-GTA. All Rights Reserved.
 
 #pragma once
 

@@ -1,4 +1,4 @@
-// Copyright K-GTA. All Rights Reserved.
+﻿// Copyright K-GTA. All Rights Reserved.
 
 #include "GunDayWantedSubsystem.h"
 
@@ -6,6 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "GunDayCore.h"
 #include "GunDayCoreSettings.h"
+#include "GunDayDebug.h"
 
 UGunDayWantedSubsystem* UGunDayWantedSubsystem::Get(const UObject* WorldContextObject)
 {
@@ -47,7 +48,8 @@ ETickableTickType UGunDayWantedSubsystem::GetTickableTickType() const
 
 bool UGunDayWantedSubsystem::IsTickable() const
 {
-	return bEnabled && Heat > 0.0f;
+	// 열기가 0 이면 할 일이 없지만, 디버그 HUD 가 켜져 있으면 계속 그려야 한다.
+	return bEnabled && (Heat > 0.0f || GunDayDebug::IsHUDEnabled());
 }
 
 TStatId UGunDayWantedSubsystem::GetStatId() const
@@ -62,6 +64,9 @@ void UGunDayWantedSubsystem::Tick(float DeltaTime)
 	{
 		return;
 	}
+
+	// 아래 감소 로직이 중간에 빠져나가도 HUD 는 매 프레임 그려야 한다.
+	GunDayDebug::DrawHUD(*this);
 
 	const bool bSpotted = IsSpotted();
 	if (bSpotted)
