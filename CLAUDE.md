@@ -28,4 +28,6 @@ Unreal Engine 5.8 프로젝트. 배경과 결정 사항은 `docs/handover-2026-0
 1. 수배 레벨 시스템 (완료 — `UGunDayWantedSubsystem`)
 2. 경찰 대응 배선 (완료 — `UGunDayPoliceResponseSubsystem`)
 3. 군중 반응 (완료 — `UGunDayCrowdSubsystem`)
-4. 골목 하나에서 경찰 둘과 1분간 총격전 — 이것이 첫 마일스톤이다
+4. 골목 하나에서 경찰 둘과 1분간 총격전 — 첫 마일스톤.
+   킷 데모 맵에서 검증 완료(2026-10-09): 재미있고 적당히 힘들다는 판단.
+   남은 것은 그 1분을 City Sample 골목으로 옮기는 일이다.
