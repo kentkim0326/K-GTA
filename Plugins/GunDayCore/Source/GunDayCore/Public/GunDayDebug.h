@@ -20,6 +20,8 @@ class UGunDayWantedSubsystem;
  *   GunDay.Police.Dismiss   투입된 경찰 전부 치우기
  *   GunDay.Police.Enabled 0 경찰 투입 끄기
  *   GunDay.AutoReport 0     피해 자동 신고 끄기
+ *   GunDay.Crowd.Gunshot    주변 시민 흩어지게 하기
+ *   GunDay.Crowd.Calm       놀란 시민 진정시키기
  */
 namespace GunDayDebug
 {

@@ -8,9 +8,12 @@
 #include "GunDayCore.h"
 #include "GunDayCoreSettings.h"
 #include "GunDayCrimeWatcherSubsystem.h"
+#include "GunDayCrowdSubsystem.h"
 #include "GunDayPoliceResponseSubsystem.h"
 #include "GunDayWantedSubsystem.h"
+#include "GameFramework/Pawn.h"
 #include "HAL/IConsoleManager.h"
+#include "Kismet/GameplayStatics.h"
 
 namespace
 {
@@ -195,6 +198,30 @@ namespace
 
 			const bool bEnabled = (Args.Num() == 0) || (FCString::Atoi(*Args[0]) != 0);
 			Police->SetResponseEnabled(bEnabled);
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdCrowdGunshot(
+		TEXT("GunDay.Crowd.Gunshot"),
+		TEXT("플레이어 위치에서 총성이 난 것으로 쳐 주변 시민을 흩어지게 한다."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>&, UWorld* World)
+		{
+			UGunDayCrowdSubsystem* Crowd = World ? World->GetSubsystem<UGunDayCrowdSubsystem>() : nullptr;
+			const APawn* PlayerPawn = World ? UGameplayStatics::GetPlayerPawn(World, 0) : nullptr;
+			if (Crowd && PlayerPawn)
+			{
+				Crowd->NotifyGunshot(PlayerPawn->GetActorLocation());
+			}
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdCrowdCalm(
+		TEXT("GunDay.Crowd.Calm"),
+		TEXT("놀란 시민을 전부 진정시킨다."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>&, UWorld* World)
+		{
+			if (UGunDayCrowdSubsystem* Crowd = World ? World->GetSubsystem<UGunDayCrowdSubsystem>() : nullptr)
+			{
+				Crowd->CalmAll();
+			}
 		}));
 
 	FAutoConsoleCommandWithWorldAndArgs CmdAutoReport(

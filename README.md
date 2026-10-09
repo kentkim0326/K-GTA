@@ -133,6 +133,8 @@ Visual Studio 2022 와 Windows SDK 가 필요하다.
 | `GunDay.Police.Dismiss` | 투입된 경찰을 전부 치운다 |
 | `GunDay.Police.Enabled 0` | 경찰 투입을 끈다 |
 | `GunDay.AutoReport 0` | 피해 자동 신고를 끈다 |
+| `GunDay.Crowd.Gunshot` | 주변 시민을 흩어지게 한다 |
+| `GunDay.Crowd.Calm` | 놀란 시민을 진정시킨다 |
 
 확인해 볼 흐름은 이렇다. `GunDay.ShowDebug 1` 로 HUD 를 켜고 `GunDay.Fire` 를 몇 번 치면
 열기가 쌓이고 별이 늘어난다. 그대로 두면 회피 대기 시간이 지난 뒤 열기가 줄고 별이 빠진다.
@@ -185,8 +187,24 @@ Visual Studio 2022 와 Windows SDK 가 필요하다.
 킷의 발사 이벤트에서 `Report Player Gunfire` 노드를 한 번 불러 주면 된다.
 킷 블루프린트를 건드리기 싫다면, 플레이어 블루프린트 쪽에서 입력 이벤트에 붙여도 같은 효과다.
 
-### 다음
+### 군중 반응
 
-1. 군중 반응 — 총성에 시민이 흩어지고 신고한다. Mass Entity 는 나중에.
+`UGunDayCrowdSubsystem` — 총성이 나면 반경 안의 시민이 소리 반대쪽으로 달아나고,
+몇 초 뒤 신고한다. 신고가 들어가면 열기가 오르고 그 시민은 한동안 목격자로 잡힌다.
+목격자가 있는 동안에는 수배가 줄지 않으므로, 사람이 많은 곳에서 쏘면 그만큼 오래 쫓긴다.
+
+값은 프로젝트 세팅 > Game > GunDay Core > **군중 반응** 에서 조정한다.
+반응 반경, 신고까지의 시간, 신고 한 건의 열기, 목격 지속 시간, 달아나는 거리를 만진다.
+
+`Civilian Classes` 에 킷의 `BP_AICharacterCivilian` 을 넣어 두는 편이 좋다.
+비워 두면 플레이어와 경찰을 뺀 모든 폰을 시민으로 보므로 적까지 달아난다.
+
+킷의 행동 트리가 이동 명령과 다투면 `Drive Civilian Flee` 를 끄고
+`On Civilian Alerted` 에 블루프린트를 붙여 킷 쪽 반응을 부르면 된다.
+
+한 번에 반응하는 시민 수는 `Max Alerted Civilians` 로 묶여 있다. 기본 24명이다.
+도시 규모로 수천 명이 필요해지면 그때 City Sample 의 Mass Entity 로 갈아탄다.
+
+### 다음
 
 첫 목표는 **골목 하나에서 경찰 둘과 1분간 총격전**이다. 도시도 차도 미션도 그 뒤다.

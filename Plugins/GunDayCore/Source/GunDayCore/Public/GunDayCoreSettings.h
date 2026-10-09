@@ -102,4 +102,47 @@ public:
 	 */
 	UPROPERTY(config, EditAnywhere, Category = "범죄 감지")
 	TArray<TSoftClassPtr<AActor>> PoliceClasses;
+
+	/** 총성에 시민이 반응하게 한다. */
+	UPROPERTY(config, EditAnywhere, Category = "군중 반응")
+	bool bEnableCrowdReaction;
+
+	/** 총성이 들리는 반경. */
+	UPROPERTY(config, EditAnywhere, Category = "군중 반응", meta = (ClampMin = "0.0"))
+	float GunshotAlertRadius;
+
+	/** 총성 처리 간격(초). 연사 한 번에 같은 시민을 수십 번 놀라게 하지 않는다. */
+	UPROPERTY(config, EditAnywhere, Category = "군중 반응", meta = (ClampMin = "0.0", Units = "s"))
+	float CrowdAlertCooldownSeconds;
+
+	/** 한 번에 반응시킬 시민 수의 상한. 프레임을 지키기 위한 안전장치다. */
+	UPROPERTY(config, EditAnywhere, Category = "군중 반응", meta = (ClampMin = "0"))
+	int32 MaxAlertedCivilians;
+
+	/** 놀란 시민이 신고하기까지 걸리는 시간(초). */
+	UPROPERTY(config, EditAnywhere, Category = "군중 반응", meta = (ClampMin = "0.0", Units = "s"))
+	float CivilianReportDelaySeconds;
+
+	/** 신고 한 건이 올리는 열기. */
+	UPROPERTY(config, EditAnywhere, Category = "군중 반응", meta = (ClampMin = "0.0"))
+	float CivilianReportHeat;
+
+	/** 신고한 시민을 목격자로 잡아 두는 시간(초). 이 동안에는 열기가 줄지 않는다. */
+	UPROPERTY(config, EditAnywhere, Category = "군중 반응", meta = (ClampMin = "0.0", Units = "s"))
+	float CivilianWitnessSeconds;
+
+	/** 시민을 소리 반대쪽으로 달아나게 한다. 킷의 행동 트리와 다투면 끈다. */
+	UPROPERTY(config, EditAnywhere, Category = "군중 반응")
+	bool bDriveCivilianFlee;
+
+	/** 달아나는 거리. */
+	UPROPERTY(config, EditAnywhere, Category = "군중 반응", meta = (ClampMin = "0.0"))
+	float CivilianFleeDistance;
+
+	/**
+	 * 시민으로 칠 폰 클래스. 비워 두면 플레이어와 경찰을 뺀 모든 폰을 시민으로 본다.
+	 * 킷의 BP_AICharacterCivilian 을 넣어 두면 적까지 달아나는 일이 없다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "군중 반응")
+	TArray<TSoftClassPtr<APawn>> CivilianClasses;
 };

@@ -15,6 +15,15 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 	, PawnRescanIntervalSeconds(2.0f)
 	, InjuryReportCooldownSeconds(1.5f)
 	, GunfireReportCooldownSeconds(1.0f)
+	, bEnableCrowdReaction(true)
+	, GunshotAlertRadius(3000.0f)
+	, CrowdAlertCooldownSeconds(0.75f)
+	, MaxAlertedCivilians(24)
+	, CivilianReportDelaySeconds(6.0f)
+	, CivilianReportHeat(15.0f)
+	, CivilianWitnessSeconds(20.0f)
+	, bDriveCivilianFlee(true)
+	, CivilianFleeDistance(2500.0f)
 {
 	CrimeHeat.Add(EGunDayCrime::Brandishing, 10.0f);
 	CrimeHeat.Add(EGunDayCrime::PublicGunfire, 25.0f);

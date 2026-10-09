@@ -11,6 +11,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GunDayCore.h"
 #include "GunDayCoreSettings.h"
+#include "GunDayCrowdSubsystem.h"
 #include "GunDayDebug.h"
 #include "GunDayPoliceResponseSubsystem.h"
 #include "GunDayWantedSubsystem.h"
@@ -157,6 +158,12 @@ void UGunDayCrimeWatcherSubsystem::HandlePawnDamaged(AActor* DamagedActor, float
 	LastInjuryReportTime.Add(Key, ElapsedSeconds);
 	WoundedByPlayer.Add(Key);
 
+	// 맞은 자리에서 총성이 난 것으로 치고 주변 시민을 흩어지게 한다.
+	if (UGunDayCrowdSubsystem* Crowd = GetWorld() ? GetWorld()->GetSubsystem<UGunDayCrowdSubsystem>() : nullptr)
+	{
+		Crowd->NotifyGunshot(DamagedActor->GetActorLocation());
+	}
+
 	const bool bPolice = IsPoliceActor(*DamagedActor);
 	Wanted->ReportCrime(bPolice ? EGunDayCrime::PoliceInjured : EGunDayCrime::CivilianInjured);
 }
@@ -198,6 +205,14 @@ void UGunDayCrimeWatcherSubsystem::ReportPlayerGunfire()
 
 	TimeSinceGunfireReport = 0.0f;
 	Wanted->ReportCrime(EGunDayCrime::PublicGunfire);
+
+	if (const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0))
+	{
+		if (UGunDayCrowdSubsystem* Crowd = GetWorld() ? GetWorld()->GetSubsystem<UGunDayCrowdSubsystem>() : nullptr)
+		{
+			Crowd->NotifyGunshot(PlayerPawn->GetActorLocation());
+		}
+	}
 }
 
 void UGunDayCrimeWatcherSubsystem::SetWatchEnabled(bool bEnabled)
