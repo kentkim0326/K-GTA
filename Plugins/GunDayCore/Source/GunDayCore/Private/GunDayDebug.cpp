@@ -228,6 +228,17 @@ namespace
 			}
 		}));
 
+	FAutoConsoleCommandWithWorldAndArgs CmdAlleyResult(
+		TEXT("GunDay.Alley.Result"),
+		TEXT("지난 판의 결과를 다시 띄운다."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>&, UWorld* World)
+		{
+			if (UGunDayEncounterSubsystem* Encounter = World ? World->GetSubsystem<UGunDayEncounterSubsystem>() : nullptr)
+			{
+				Encounter->ShowLastResult();
+			}
+		}));
+
 	FAutoConsoleCommandWithWorldAndArgs CmdCrowdGunshot(
 		TEXT("GunDay.Crowd.Gunshot"),
 		TEXT("플레이어 위치에서 총성이 난 것으로 쳐 주변 시민을 흩어지게 한다."),

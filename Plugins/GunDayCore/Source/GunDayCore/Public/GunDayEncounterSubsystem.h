@@ -58,6 +58,14 @@ public:
 	UFUNCTION(BlueprintPure, Category = "GunDay|Encounter")
 	float GetRemainingSeconds() const;
 
+	/** 지난 판의 결과를 다시 띄운다. 놓쳤을 때 쓴다. */
+	UFUNCTION(BlueprintCallable, Category = "GunDay|Encounter")
+	void ShowLastResult();
+
+	/** 지난 판의 결과가 있는가. */
+	UFUNCTION(BlueprintPure, Category = "GunDay|Encounter")
+	bool HasLastResult() const { return bHasLastResult; }
+
 	/** 이번 판에서 쓰러뜨린 경찰 수. */
 	UFUNCTION(BlueprintPure, Category = "GunDay|Encounter")
 	int32 GetKills() const { return Kills; }
@@ -91,4 +99,13 @@ private:
 	int32 Kills = 0;
 
 	bool bBoundToPolice = false;
+
+	/** 지난 판의 결과. 결과 줄을 놓쳤을 때 다시 띄우기 위해 들고 있는다. */
+	bool bHasLastResult = false;
+
+	bool bLastSurvived = false;
+
+	int32 LastKills = 0;
+
+	float LastSeconds = 0.0f;
 };

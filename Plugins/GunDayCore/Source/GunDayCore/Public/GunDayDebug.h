@@ -24,6 +24,7 @@ class UGunDayWantedSubsystem;
  *   GunDay.Crowd.Calm       놀란 시민 진정시키기
  *   GunDay.Alley.Start      1분 총격전 측정 시작
  *   GunDay.Alley.Stop       측정 중단
+ *   GunDay.Alley.Result     지난 판 결과 다시 보기
  */
 namespace GunDayDebug
 {

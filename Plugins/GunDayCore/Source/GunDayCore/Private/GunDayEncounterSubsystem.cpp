@@ -178,20 +178,31 @@ void UGunDayEncounterSubsystem::FinishEncounter(bool bSurvived)
 {
 	bRunning = false;
 
-	const float Seconds = ElapsedSeconds;
+	bHasLastResult = true;
+	bLastSurvived = bSurvived;
+	LastKills = Kills;
+	LastSeconds = ElapsedSeconds;
 
 	UE_LOG(LogGunDay, Log, TEXT("총격전 측정 끝: %s, %.1f초, 처치 %d명"),
-		bSurvived ? TEXT("생존") : TEXT("사망"), Seconds, Kills);
+		bSurvived ? TEXT("생존") : TEXT("사망"), LastSeconds, LastKills);
 
-	if (GEngine)
+	ShowLastResult();
+
+	OnEncounterFinished.Broadcast(bSurvived, LastKills, LastSeconds);
+}
+
+void UGunDayEncounterSubsystem::ShowLastResult()
+{
+	if (!GEngine || !bHasLastResult)
 	{
-		const FColor Color = bSurvived ? FColor(120, 220, 120) : FColor(230, 80, 70);
-		GEngine->AddOnScreenDebugMessage(7710, 8.0f, Color,
-			FString::Printf(TEXT("%s — %.1f초 버팀, 경찰 %d명 처치"),
-				bSurvived ? TEXT("생존") : TEXT("사망"), Seconds, Kills));
+		return;
 	}
 
-	OnEncounterFinished.Broadcast(bSurvived, Kills, Seconds);
+	// 화면에 오래 남겨 둔다. 60초를 버틴 뒤 결과를 놓치면 다시 돌려야 한다.
+	const FColor Color = bLastSurvived ? FColor(120, 220, 120) : FColor(230, 80, 70);
+	GEngine->AddOnScreenDebugMessage(7710, 30.0f, Color,
+		FString::Printf(TEXT("%s — %.1f초 버팀, 경찰 %d명 처치"),
+			bLastSurvived ? TEXT("생존") : TEXT("사망"), LastSeconds, LastKills));
 }
 
 UGunDayWantedSubsystem* UGunDayEncounterSubsystem::GetWantedSubsystem() const
