@@ -105,6 +105,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "GunDay|Dispute")
 	bool IsInDispute(const APawn* Pawn) const;
 
+	/** 이 사람이 최근 시비 끝에 총을 맞았는가. 범죄 감지가 플레이어 탓으로 돌리지 않게 묻는다. */
+	bool WasShotInDisputeRecently(const AActor* Actor, float WithinSeconds) const;
+
 	UFUNCTION(BlueprintCallable, Category = "GunDay|Dispute")
 	void SetDisputesEnabled(bool bEnabled);
 
@@ -184,6 +187,9 @@ private:
 	float TimeSinceLastAttempt = 0.0f;
 
 	float TimeSinceCastUpdate = 0.0f;
+
+	/** 시비 끝에 총을 맞은 사람과 그 시각. */
+	TMap<TWeakObjectPtr<AActor>, float> DisputeVictims;
 
 	bool bDisputesEnabled = true;
 };

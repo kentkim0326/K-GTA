@@ -130,6 +130,20 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "범죄 감지")
 	TArray<FName> KitDeathEventNames;
 
+	/**
+	 * 킷 캐릭터의 체력 변수 이름. 폰과 그 컴포넌트에서 찾는다.
+	 * 줄면 맞은 것, 0 이 되면 죽은 것으로 본다. 디스패처를 못 찾아도 이것으로 잡는다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "범죄 감지")
+	TArray<FName> KitHealthPropertyNames;
+
+	/**
+	 * 체력이 줄었을 때 플레이어 짓으로 볼 거리. 이 안에서 일어났고 시비 총격이 아니면 플레이어로 친다.
+	 * 체력 변수에는 누가 쐈는지가 없어서 쓰는 어림이다. 경찰의 오사도 플레이어 탓이 된다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "범죄 감지", meta = (ClampMin = "0.0"))
+	float KitDamageAttributionRadius;
+
 	/** 총성에 시민이 반응하게 한다. */
 	UPROPERTY(config, EditAnywhere, Category = "군중 반응")
 	bool bEnableCrowdReaction;

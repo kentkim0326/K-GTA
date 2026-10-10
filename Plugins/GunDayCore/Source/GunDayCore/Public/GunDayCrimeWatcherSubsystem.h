@@ -107,6 +107,28 @@ private:
 	/** 이 객체가 플레이어 쪽인가. 플레이어 폰, 컨트롤러, 그 무기나 투사체까지 본다. */
 	bool IsPlayerSide(const UObject* Object) const;
 
+	/** 폰이나 컴포넌트에서 체력 변수를 찾아 감시 목록에 넣는다. */
+	void WatchKitHealth(APawn& Pawn);
+
+	/** 감시 중인 체력을 읽어 줄었으면 신고한다. */
+	void PollKitHealth();
+
+	/** 클래스의 디스패처와 체력 관련 변수를 로그에 남긴다. 처음 한 번만. */
+	void LogKitClassLayout(APawn& Pawn);
+
+	/** 체력 감시 한 건. */
+	struct FHealthWatch
+	{
+		TWeakObjectPtr<APawn> Pawn;
+		TWeakObjectPtr<UObject> Owner;
+		const FNumericProperty* Property = nullptr;
+		double LastValue = 0.0;
+	};
+
+	TArray<FHealthWatch> HealthWatches;
+
+	float TimeSinceHealthPoll = 0.0f;
+
 	UFUNCTION()
 	void HandlePawnDamaged(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 

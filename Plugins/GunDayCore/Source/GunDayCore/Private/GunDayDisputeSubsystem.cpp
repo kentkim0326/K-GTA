@@ -775,6 +775,8 @@ void UGunDayDisputeSubsystem::FireShot(FGunDayActiveDispute& Dispute)
 	}
 
 	// 먼저 꺼낸 쪽이 먼저 쏜다고 본다. 번갈아 말하다 끝난 쪽이 쏘게 해도 된다.
+	// 피해보다 먼저 적어 둔다. 범죄 감지가 체력이 준 것을 보고 플레이어 탓으로 돌리지 않게 한다.
+	DisputeVictims.Add(Victim, ElapsedSeconds);
 	UGameplayStatics::ApplyDamage(Victim, Scenario->ShotDamage, Shooter->GetController(), Shooter, nullptr);
 
 	// 총이 오간 자리는 같은 배역으로 다시 시작하지 않는다.
@@ -971,6 +973,12 @@ bool UGunDayDisputeSubsystem::IsInDispute(const APawn* Pawn) const
 	}
 
 	return false;
+}
+
+bool UGunDayDisputeSubsystem::WasShotInDisputeRecently(const AActor* Actor, float WithinSeconds) const
+{
+	const float* ShotAt = Actor ? DisputeVictims.Find(TWeakObjectPtr<AActor>(const_cast<AActor*>(Actor))) : nullptr;
+	return ShotAt && (ElapsedSeconds - *ShotAt) <= WithinSeconds;
 }
 
 void UGunDayDisputeSubsystem::ClearDisputes()

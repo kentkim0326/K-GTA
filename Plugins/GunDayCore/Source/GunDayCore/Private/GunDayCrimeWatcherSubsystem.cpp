@@ -13,6 +13,7 @@
 #include "GunDayCoreSettings.h"
 #include "GunDayCrowdSubsystem.h"
 #include "GunDayDebug.h"
+#include "GunDayDisputeSubsystem.h"
 #include "GunDayNewsSubsystem.h"
 #include "GunDayPoliceResponseSubsystem.h"
 #include "GunDaySocietySubsystem.h"
@@ -51,6 +52,9 @@ void UGunDayKitEventListener::ProcessEvent(UFunction* Function, void* Parms)
 
 namespace
 {
+	/** 킷 체력을 읽는 간격(초). 한 발 한 발을 놓치지 않을 만큼 짧게 둔다. */
+	constexpr float CrimeHealthPollSeconds = 0.1f;
+
 	/** 디스패처 시그니처를 "이름:타입, ..." 으로 적는다. 로그용. */
 	FString DescribeSignature(const UFunction* Signature)
 	{
@@ -96,6 +100,7 @@ void UGunDayCrimeWatcherSubsystem::Deinitialize()
 	KilledReported.Reset();
 	Listeners.Reset();
 	LoggedClasses.Reset();
+	HealthWatches.Reset();
 
 	Super::Deinitialize();
 }
@@ -132,6 +137,13 @@ void UGunDayCrimeWatcherSubsystem::Tick(float DeltaTime)
 	{
 		TimeSinceRescan = 0.0f;
 		RefreshWatchedPawns();
+	}
+
+	TimeSinceHealthPoll += DeltaTime;
+	if (TimeSinceHealthPoll >= CrimeHealthPollSeconds)
+	{
+		TimeSinceHealthPoll = 0.0f;
+		PollKitHealth();
 	}
 
 	if (GEngine && GunDayDebug::IsHUDEnabled())
@@ -240,7 +252,11 @@ void UGunDayCrimeWatcherSubsystem::BindKitEvents(APawn& Pawn)
 			*DescribeSignature(HitDispatcher ? HitDispatcher->SignatureFunction : nullptr),
 			DeathDispatcher ? *DeathDispatcher->GetName() : TEXT("없음"),
 			*DescribeSignature(DeathDispatcher ? DeathDispatcher->SignatureFunction : nullptr));
+		LogKitClassLayout(Pawn);
 	}
+
+	// 디스패처와 별개로 체력도 지켜본다. 이쪽은 이름만 맞으면 확실하게 잡힌다.
+	WatchKitHealth(Pawn);
 
 	if (!HitDispatcher && !DeathDispatcher)
 	{
@@ -268,6 +284,166 @@ void UGunDayCrimeWatcherSubsystem::BindKitEvents(APawn& Pawn)
 	}
 
 	Listeners.Add(Listener);
+}
+
+void UGunDayCrimeWatcherSubsystem::LogKitClassLayout(APawn& Pawn)
+{
+	// 디스패처 전부와, 이름에 체력·죽음·피해가 들어간 변수를 적는다.
+	auto Describe = [](const UStruct* Type) -> FString
+	{
+		static const TCHAR* Keys[] = { TEXT("health"), TEXT("dead"), TEXT("die"), TEXT("death"), TEXT("damage"), TEXT("hit"), TEXT("kill") };
+
+		TArray<FString> Parts;
+		for (TFieldIterator<FProperty> It(Type); It; ++It)
+		{
+			const FString Name = It->GetName();
+			if (const FMulticastDelegateProperty* Dispatcher = CastField<FMulticastDelegateProperty>(*It))
+			{
+				Parts.Add(FString::Printf(TEXT("[디스패처] %s(%s)"), *Name, *DescribeSignature(Dispatcher->SignatureFunction)));
+				continue;
+			}
+
+			for (const TCHAR* Key : Keys)
+			{
+				if (Name.Contains(Key))
+				{
+					Parts.Add(FString::Printf(TEXT("%s:%s"), *Name, *It->GetCPPType()));
+					break;
+				}
+			}
+		}
+		return FString::Join(Parts, TEXT(", "));
+	};
+
+	UE_LOG(LogGunDay, Log, TEXT("킷 구성: %s — %s"), *Pawn.GetClass()->GetName(), *Describe(Pawn.GetClass()));
+
+	TInlineComponentArray<UActorComponent*> Components(&Pawn);
+	for (const UActorComponent* Component : Components)
+	{
+		// 엔진 컴포넌트는 볼 것이 없다. 블루프린트로 만든 컴포넌트만 적는다.
+		if (Component && Component->GetClass()->ClassGeneratedBy)
+		{
+			UE_LOG(LogGunDay, Log, TEXT("킷 구성:   └ %s (%s) — %s"),
+				*Component->GetName(), *Component->GetClass()->GetName(), *Describe(Component->GetClass()));
+		}
+	}
+}
+
+void UGunDayCrimeWatcherSubsystem::WatchKitHealth(APawn& Pawn)
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	if (!Settings)
+	{
+		return;
+	}
+
+	auto FindIn = [Settings](UObject* Object) -> const FNumericProperty*
+	{
+		for (const FName& Name : Settings->KitHealthPropertyNames)
+		{
+			if (const FNumericProperty* Property = FindFProperty<FNumericProperty>(Object->GetClass(), Name))
+			{
+				return Property;
+			}
+		}
+		return nullptr;
+	};
+
+	UObject* Owner = &Pawn;
+	const FNumericProperty* Property = FindIn(&Pawn);
+
+	if (!Property)
+	{
+		TInlineComponentArray<UActorComponent*> Components(&Pawn);
+		for (UActorComponent* Component : Components)
+		{
+			if (Component && (Property = FindIn(Component)) != nullptr)
+			{
+				Owner = Component;
+				break;
+			}
+		}
+	}
+
+	if (!Property)
+	{
+		return;
+	}
+
+	const void* ValuePtr = Property->ContainerPtrToValuePtr<void>(Owner);
+
+	FHealthWatch Watch;
+	Watch.Pawn = &Pawn;
+	Watch.Owner = Owner;
+	Watch.Property = Property;
+	Watch.LastValue = Property->IsFloatingPoint()
+		? Property->GetFloatingPointPropertyValue(ValuePtr)
+		: static_cast<double>(Property->GetSignedIntPropertyValue(ValuePtr));
+	HealthWatches.Add(Watch);
+}
+
+void UGunDayCrimeWatcherSubsystem::PollKitHealth()
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	const UGunDayDisputeSubsystem* Disputes = GetWorld() ? GetWorld()->GetSubsystem<UGunDayDisputeSubsystem>() : nullptr;
+	if (!Settings || !PlayerPawn)
+	{
+		return;
+	}
+
+	const float AttributionRadiusSquared = Settings->KitDamageAttributionRadius * Settings->KitDamageAttributionRadius;
+
+	for (int32 Index = HealthWatches.Num() - 1; Index >= 0; --Index)
+	{
+		FHealthWatch& Watch = HealthWatches[Index];
+		APawn* Pawn = Watch.Pawn.Get();
+		UObject* Owner = Watch.Owner.Get();
+		if (!IsValid(Pawn) || !IsValid(Owner))
+		{
+			HealthWatches.RemoveAt(Index);
+			continue;
+		}
+
+		const void* ValuePtr = Watch.Property->ContainerPtrToValuePtr<void>(Owner);
+		const double Value = Watch.Property->IsFloatingPoint()
+			? Watch.Property->GetFloatingPointPropertyValue(ValuePtr)
+			: static_cast<double>(Watch.Property->GetSignedIntPropertyValue(ValuePtr));
+
+		const double Previous = Watch.LastValue;
+		Watch.LastValue = Value;
+
+		if (Value >= Previous - KINDA_SMALL_NUMBER)
+		{
+			continue;
+		}
+
+		// 체력에는 누가 쐈는지가 없다. 시비 총격이 아니고 플레이어 근처에서 일어났으면 플레이어로 본다.
+		const bool bDisputeShot = Disputes && Disputes->WasShotInDisputeRecently(Pawn, 1.0f);
+		const bool bNearPlayer = FVector::DistSquared(Pawn->GetActorLocation(), PlayerPawn->GetActorLocation()) <= AttributionRadiusSquared;
+		const bool bByPlayer = !bDisputeShot && bNearPlayer;
+		const bool bDead = Value <= 0.0;
+
+		UE_LOG(LogGunDay, Verbose, TEXT("체력: %s %.0f -> %.0f%s 플레이어=%s"),
+			*Pawn->GetName(), Previous, Value, bDead ? TEXT(" (쓰러짐)") : TEXT(""),
+			bByPlayer ? TEXT("예") : (bDisputeShot ? TEXT("아니오(시비)") : TEXT("아니오(멂)")));
+
+		if (bByPlayer)
+		{
+			ReportInjury(*Pawn);
+		}
+
+		if (bDead && (bByPlayer || WoundedByPlayer.Contains(Pawn)))
+		{
+			ReportKill(*Pawn);
+		}
+
+		// 쓰러진 사람은 더 볼 일이 없다.
+		if (bDead)
+		{
+			HealthWatches.RemoveAt(Index);
+		}
+	}
 }
 
 void UGunDayCrimeWatcherSubsystem::HandleKitEvent(APawn* Pawn, const UFunction* Signature, void* Parms, bool bDeath)

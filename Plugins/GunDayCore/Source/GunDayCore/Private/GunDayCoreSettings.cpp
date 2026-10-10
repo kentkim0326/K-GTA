@@ -78,6 +78,8 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 	// 킷 v2.2 의 디스패처 이름. BP_AICharacterBase 에서 확인했다.
 	KitHitEventNames = { FName(TEXT("Hit")), FName(TEXT("Damaged")), FName(TEXT("OnDamaged")) };
 	KitDeathEventNames = { FName(TEXT("Died")), FName(TEXT("EnemyDied")), FName(TEXT("OnDeath")) };
+	KitHealthPropertyNames = { FName(TEXT("CurrentHealth")), FName(TEXT("Health")), FName(TEXT("HealthValue")) };
+	KitDamageAttributionRadius = 6000.0f;
 
 	// 레벨 1~5 문턱값.
 	WantedLevelThresholds = { 20.0f, 80.0f, 180.0f, 320.0f, 500.0f };
