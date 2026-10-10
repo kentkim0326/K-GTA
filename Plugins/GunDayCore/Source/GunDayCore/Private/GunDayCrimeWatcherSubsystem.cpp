@@ -124,6 +124,8 @@ void UGunDayCrimeWatcherSubsystem::RefreshWatchedPawns()
 		Pawn->OnTakeAnyDamage.AddDynamic(this, &UGunDayCrimeWatcherSubsystem::HandlePawnDamaged);
 		Pawn->OnDestroyed.AddDynamic(this, &UGunDayCrimeWatcherSubsystem::HandlePawnDestroyed);
 		WatchedPawns.Add(Pawn);
+
+		UE_LOG(LogGunDay, VeryVerbose, TEXT("감시 시작: %s"), *Pawn->GetName());
 	}
 }
 
@@ -141,8 +143,15 @@ void UGunDayCrimeWatcherSubsystem::HandlePawnDamaged(AActor* DamagedActor, float
 		return;
 	}
 
+	// 신고가 안 들어갈 때 어디서 끊기는지 보려고 남긴다. log LogGunDay Verbose 로 켠다.
+	UE_LOG(LogGunDay, Verbose, TEXT("피해: %s %.0f (가해 %s, 원인 %s)"),
+		*DamagedActor->GetName(), Damage,
+		InstigatedBy ? *InstigatedBy->GetName() : TEXT("없음"),
+		DamageCauser ? *DamageCauser->GetName() : TEXT("없음"));
+
 	if (!IsPlayerInstigator(InstigatedBy, DamageCauser))
 	{
+		UE_LOG(LogGunDay, Verbose, TEXT("피해: 플레이어가 준 피해로 보지 않았다."));
 		return;
 	}
 

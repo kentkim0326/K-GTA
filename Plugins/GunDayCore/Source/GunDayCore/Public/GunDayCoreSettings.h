@@ -228,6 +228,13 @@ public:
 	bool bStartDisputesWithoutSpots;
 
 	/**
+	 * 시비 지점이 있는 맵에서도 플레이어 주변 행인끼리 우발형 시비를 일으킨다.
+	 * 주차, 담배 같은 우발형은 아무 데서나 붙는다. 대기형은 지점에서만 난다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "시비")
+	bool bAmbientSparkDisputes;
+
+	/**
 	 * 시비 지점이 배역을 직접 세운다. 지점마다 Bring Own Cast 로 따로 끌 수 있다.
 	 * 빈 맵에서도 시나리오대로 시비가 나게 하는 장치다.
 	 */

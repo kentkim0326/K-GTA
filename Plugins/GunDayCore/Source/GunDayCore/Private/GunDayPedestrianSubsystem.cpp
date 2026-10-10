@@ -1,4 +1,4 @@
-// Copyright K-GTA. All Rights Reserved.
+﻿// Copyright K-GTA. All Rights Reserved.
 
 #include "GunDayPedestrianSubsystem.h"
 
@@ -20,13 +20,13 @@
 namespace
 {
 	/** 걷는 상태를 살피는 간격(초). 반응 속도가 아니라 비용을 위한 값이다. */
-	constexpr float WanderUpdateIntervalSeconds = 0.25f;
+	constexpr float PedestrianWanderUpdateSeconds = 0.25f;
 
 	/** 시선과 이 이상 같은 방향이면 시야 안으로 본다. 약 60도. */
-	constexpr float InViewDotThreshold = 0.5f;
+	constexpr float PedestrianInViewDot = 0.5f;
 
 	/** 자리를 찾는 시도 횟수. 못 찾으면 다음 차례에 다시 한다. */
-	constexpr int32 MaxSpawnAttempts = 8;
+	constexpr int32 PedestrianSpawnAttempts = 8;
 }
 
 UGunDayPedestrianSubsystem* UGunDayPedestrianSubsystem::Get(const UObject* WorldContextObject)
@@ -94,7 +94,7 @@ void UGunDayPedestrianSubsystem::Tick(float DeltaTime)
 		TrySpawnPedestrian(*Player);
 	}
 
-	if (Settings->bDrivePedestrianWander && TimeSinceWander >= WanderUpdateIntervalSeconds)
+	if (Settings->bDrivePedestrianWander && TimeSinceWander >= PedestrianWanderUpdateSeconds)
 	{
 		TimeSinceWander = 0.0f;
 		DriveWander();
@@ -170,7 +170,7 @@ bool UGunDayPedestrianSubsystem::TrySpawnPedestrian(const APawn& Player)
 	const float MinDistanceSquared = Settings->PedestrianMinSpawnDistance * Settings->PedestrianMinSpawnDistance;
 
 	FNavLocation Candidate;
-	for (int32 Attempt = 0; Attempt < MaxSpawnAttempts; ++Attempt)
+	for (int32 Attempt = 0; Attempt < PedestrianSpawnAttempts; ++Attempt)
 	{
 		if (!NavSystem->GetRandomReachablePointInRadius(PlayerLocation, Settings->PedestrianMaxSpawnDistance, Candidate))
 		{
@@ -297,7 +297,7 @@ bool UGunDayPedestrianSubsystem::IsPointInView(const FVector& Point) const
 
 	// 사람 머리 높이를 본다.
 	const FVector Target = Point + FVector(0.0f, 0.0f, 150.0f);
-	if (FVector::DotProduct((Target - EyeLocation).GetSafeNormal(), EyeRotation.Vector()) < InViewDotThreshold)
+	if (FVector::DotProduct((Target - EyeLocation).GetSafeNormal(), EyeRotation.Vector()) < PedestrianInViewDot)
 	{
 		return false;
 	}

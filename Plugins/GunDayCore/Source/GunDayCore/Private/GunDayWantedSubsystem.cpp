@@ -113,6 +113,9 @@ void UGunDayWantedSubsystem::ReportCrime(EGunDayCrime Crime)
 		return;
 	}
 
+	UE_LOG(LogGunDay, Log, TEXT("범죄 신고: %s (+%.0f)"),
+		*StaticEnum<EGunDayCrime>()->GetNameStringByValue(static_cast<int64>(Crime)), *Amount);
+
 	AddHeat(*Amount);
 }
 

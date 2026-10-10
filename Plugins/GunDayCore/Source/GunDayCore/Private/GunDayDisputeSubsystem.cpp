@@ -25,10 +25,10 @@
 namespace
 {
 	/** 배역 지점을 살피는 간격(초). 반응 속도가 아니라 비용을 위한 값이다. */
-	constexpr float CastUpdateIntervalSeconds = 0.5f;
+	constexpr float DisputeCastUpdateSeconds = 0.5f;
 
 	/** 시선과 이 이상 같은 방향이면 시야 안으로 본다. 약 60도. */
-	constexpr float InViewDotThreshold = 0.5f;
+	constexpr float DisputeCastInViewDot = 0.5f;
 }
 
 UGunDayDisputeSubsystem* UGunDayDisputeSubsystem::Get(const UObject* WorldContextObject)
@@ -113,7 +113,7 @@ void UGunDayDisputeSubsystem::Tick(float DeltaTime)
 
 	// 배역을 세우는 지점은 주기를 기다리지 않는다. 플레이어가 다가오면 바로 시작한다.
 	TimeSinceCastUpdate += DeltaTime;
-	if (TimeSinceCastUpdate >= CastUpdateIntervalSeconds)
+	if (TimeSinceCastUpdate >= DisputeCastUpdateSeconds)
 	{
 		TimeSinceCastUpdate = 0.0f;
 		UpdateCastSpots();
@@ -199,9 +199,28 @@ bool UGunDayDisputeSubsystem::TryStartDisputeAtSpot()
 		return false;
 	}
 
-	// 레벨에 시비 지점이 하나도 없을 때만 플레이어 주변 아무나로 시작한다.
-	// 지점이 있는 맵에서 아무나 붙으면 골목마다 정해 둔 상황이 흐려진다.
-	return !bLevelHasSpots && Settings->bStartDisputesWithoutSpots && StartDisputeNearPlayer(-1);
+	// 레벨에 시비 지점이 하나도 없으면 플레이어 주변 아무나로, 아무 상황이나 시작한다.
+	if (!bLevelHasSpots)
+	{
+		return Settings->bStartDisputesWithoutSpots && StartDisputeNearPlayer(-1);
+	}
+
+	// 지점이 있는 맵에서는 행인끼리 우발형만 붙는다. 대기형은 지점의 몫이다.
+	if (!Settings->bAmbientSparkDisputes)
+	{
+		return false;
+	}
+
+	TArray<int32> SparkIndices;
+	for (int32 Index = 0; Index < Settings->DisputeScenarios.Num(); ++Index)
+	{
+		if (Settings->DisputeScenarios[Index].Shape == EGunDayDisputeShape::Spark)
+		{
+			SparkIndices.Add(Index);
+		}
+	}
+
+	return SparkIndices.Num() > 0 && StartDisputeNearPlayer(SparkIndices[FMath::RandHelper(SparkIndices.Num())]);
 }
 
 void UGunDayDisputeSubsystem::UpdateCastSpots()
@@ -424,7 +443,7 @@ bool UGunDayDisputeSubsystem::IsSpotInView(const AGunDayDisputeSpot& Spot) const
 	// 사람 머리 높이를 본다. 바닥만 가려져 있으면 보이는 것으로 친다.
 	const FVector Target = Spot.GetActorLocation() + FVector(0.0f, 0.0f, 150.0f);
 	const FVector ToTarget = (Target - EyeLocation).GetSafeNormal();
-	if (FVector::DotProduct(ToTarget, EyeRotation.Vector()) < InViewDotThreshold)
+	if (FVector::DotProduct(ToTarget, EyeRotation.Vector()) < DisputeCastInViewDot)
 	{
 		return false;
 	}
@@ -839,10 +858,18 @@ void UGunDayDisputeSubsystem::GatherCandidates(const FVector& Center, float Radi
 
 	const float RadiusSquared = Radius * Radius;
 
+	// 지점이 세운 배역은 그 지점의 상황만 한다. 행인 시비에 끌려가면 짝이 깨진다.
+	TSet<const APawn*> CastMembers;
+	for (TActorIterator<AGunDayDisputeSpot> It(World); It; ++It)
+	{
+		CastMembers.Add(It->CastFirst.Get());
+		CastMembers.Add(It->CastSecond.Get());
+	}
+
 	for (TActorIterator<APawn> It(World); It; ++It)
 	{
 		APawn* Pawn = *It;
-		if (!IsValid(Pawn) || Pawn == Player || IsInDispute(Pawn))
+		if (!IsValid(Pawn) || Pawn == Player || IsInDispute(Pawn) || CastMembers.Contains(Pawn))
 		{
 			continue;
 		}
