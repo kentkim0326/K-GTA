@@ -8,12 +8,12 @@
 #   py "C:/Dev/GunsKorea/Tools/Editor/setup_alley_map.py" start
 #       지금 뷰포트 카메라 아래 바닥에 PlayerStart 를 놓는다. 골목으로 날아간 뒤 부른다.
 #
-#   py "C:/Dev/GunsKorea/Tools/Editor/setup_alley_map.py" scenarios
-#       시비 상황 번호와 이름을 출력한다. spot 에 넘길 번호를 고를 때 본다.
-#
 #   py "C:/Dev/GunsKorea/Tools/Editor/setup_alley_map.py" spot 4 6
 #       카메라 아래 바닥에 시비 지점을 놓고 4번, 6번 상황을 붙인다. 번호를 빼면 아무 상황이나 난다.
 #       배역 둘은 카메라 기준 좌우로 마주 선다. 옆모습이 보이도록 카메라를 돌려 두고 부른다.
+#       상황 번호(프로젝트 세팅 > GunDay Core > 시비 > Dispute Scenarios 순서):
+#         우발  0 주차 시비  1 담배 훈계  2 노인석  3 편의점
+#         대기  4 병원 대기실  5 전세 사기  6 학폭 처리  7 산재 은폐  8 보험금 거절
 
 import sys
 import unreal
@@ -113,10 +113,11 @@ def floor_under_camera():
     cam_loc, cam_rot = editor.get_level_viewport_camera_info()
     end = cam_loc + unreal.Vector(0, 0, -100000)
     hit = unreal.SystemLibrary.line_trace_single(
-        world, cam_loc, end, unreal.TraceTypeQuery.TRACE_TYPE_QUERY1,
+        world, cam_loc, end, unreal.TraceTypeQuery.ECC_VISIBILITY,
         False, [], unreal.DrawDebugTrace.NONE, True)
-    # 맞은 것이 없으면 None 이 온다. 맞았으면 Break Hit Result 순서로 풀어 쓴다.
-    parts = unreal.GameplayStatics.break_hit_result(hit) if hit is not None else None
+    # 맞은 것이 없으면 None 이 온다. to_tuple 은 Break Hit Result 순서다.
+    # 0 = 막혔는가, 4 = 맞은 위치. (UE 5.8 에서 확인)
+    parts = hit.to_tuple() if hit is not None else None
     if not parts or not parts[0]:
         raise RuntimeError("카메라 아래에 바닥이 없음. 골목 위로 카메라를 옮긴 뒤 다시 부를 것.")
     return parts[4], cam_rot.yaw
@@ -135,22 +136,9 @@ def place_player_start():
     log("PlayerStart: {} (카메라가 보던 방향)".format(location))
 
 
-def scenario_names():
-    settings = unreal.get_default_object(unreal.GunDayCoreSettings)
-    return [s.get_editor_property("name") for s in settings.get_editor_property("dispute_scenarios")]
-
-
-def print_scenarios():
-    for index, name in enumerate(scenario_names()):
-        log("{:2d}  {}".format(index, name))
-
-
 def place_dispute_spot(indices):
-    names = scenario_names()
-    for i in indices:
-        if i < 0 or i >= len(names):
-            raise RuntimeError("{}번 상황이 없음. 'scenarios' 로 번호를 볼 것.".format(i))
-
+    # 설정 클래스가 Python 에 노출되어 있지 않아 번호를 여기서 검사하지 못한다.
+    # 없는 번호면 게임 중에 "시비 배역: ... 상황이 설정에 없다" 경고가 뜬다.
     # 지점은 바닥에 둔다. 배역은 지점의 좌우로 서므로 카메라 방향을 그대로 쓰면 옆모습이 보인다.
     floor, yaw = floor_under_camera()
     spot = actors.spawn_actor_from_class(unreal.GunDayDisputeSpot, floor, unreal.Rotator(0, 0, yaw))
@@ -158,15 +146,11 @@ def place_dispute_spot(indices):
 
     label = "DisputeSpot_" + ("_".join(str(i) for i in indices) if indices else "Any")
     spot.set_actor_label(label)
-    picked = ", ".join(names[i] for i in indices) if indices else "아무 상황"
-    log("시비 지점 {}: {} ({})".format(label, floor, picked))
+    log("시비 지점 {}: {}".format(label, floor))
 
 
 def main():
     command = sys.argv[1] if len(sys.argv) > 1 else ""
-    if command == "scenarios":
-        print_scenarios()
-        return
     if command == "start":
         place_player_start()
     elif command == "spot":
