@@ -75,10 +75,10 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 	CrimeHeat.Add(EGunDayCrime::VehicleTheft, 20.0f);
 	CrimeHeat.Add(EGunDayCrime::PropertyDamage, 8.0f);
 
-	// 킷 v2.2 의 디스패처 이름. BP_AICharacterBase 에서 확인했다.
-	KitHitEventNames = { FName(TEXT("Hit")), FName(TEXT("Damaged")), FName(TEXT("OnDamaged")) };
-	KitDeathEventNames = { FName(TEXT("Died")), FName(TEXT("EnemyDied")), FName(TEXT("OnDeath")) };
-	KitHealthPropertyNames = { FName(TEXT("CurrentHealth")), FName(TEXT("Health")), FName(TEXT("HealthValue")) };
+	// 킷 v2.2 의 이름. 실행 중 "킷 구성:" 로그로 BP_AICharacterBase 에서 확인했다(2026-10-10).
+	KitHitEventNames = { FName(TEXT("AI Get Damage Dispatcher")) };
+	KitDeathEventNames = { FName(TEXT("AI Died")) };
+	KitHealthPropertyNames = { FName(TEXT("AI's health")) };
 	KitDamageAttributionRadius = 6000.0f;
 
 	// 레벨 1~5 문턱값.

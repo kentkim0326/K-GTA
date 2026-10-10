@@ -255,8 +255,11 @@ void UGunDayCrimeWatcherSubsystem::BindKitEvents(APawn& Pawn)
 		LogKitClassLayout(Pawn);
 	}
 
-	// 디스패처와 별개로 체력도 지켜본다. 이쪽은 이름만 맞으면 확실하게 잡힌다.
-	WatchKitHealth(Pawn);
+	// 맞음 디스패처가 없을 때만 체력을 지켜본다. 체력에는 누가 쐈는지가 없어 어림이 섞인다.
+	if (!HitDispatcher)
+	{
+		WatchKitHealth(Pawn);
+	}
 
 	if (!HitDispatcher && !DeathDispatcher)
 	{
