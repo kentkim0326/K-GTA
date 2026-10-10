@@ -81,6 +81,13 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "경찰 대응", meta = (ClampMin = "0.0"))
 	float ResponderEngageDistance;
 
+	/**
+	 * 이 시간 동안 1m 도 다가오지 못하고 플레이어도 못 본 경찰은 치우고 다른 자리에 다시 투입한다.
+	 * 골목의 좁은 틈이나 끊긴 내비메시 앞에서 맴도는 것을 막는다. 0 이면 끈다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "경찰 대응", meta = (ClampMin = "0.0", Units = "s"))
+	float ResponderStuckSeconds;
+
 	/** 다가오는 명령을 다시 내리는 간격(초). */
 	UPROPERTY(config, EditAnywhere, Category = "경찰 대응", meta = (ClampMin = "0.1", Units = "s"))
 	float ResponderRepathIntervalSeconds;

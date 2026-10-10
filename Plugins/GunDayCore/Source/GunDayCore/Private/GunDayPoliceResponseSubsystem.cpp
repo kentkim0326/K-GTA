@@ -16,6 +16,7 @@
 #include "GunDayWantedSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "NavigationPath.h"
 #include "NavigationSystem.h"
 
 namespace
@@ -125,6 +126,7 @@ void UGunDayPoliceResponseSubsystem::Tick(float DeltaTime)
 
 	TimeSinceLastSpawn += DeltaTime;
 	TimeSinceRepath += DeltaTime;
+	ElapsedSeconds += DeltaTime;
 
 	if (Settings->bDriveRespondersToPlayer && TimeSinceRepath >= Settings->ResponderRepathIntervalSeconds)
 	{
@@ -137,8 +139,10 @@ void UGunDayPoliceResponseSubsystem::Tick(float DeltaTime)
 		const bool bNeedsMore = Responders.Num() < Tier.DesiredCount;
 		const bool bIntervalPassed = TimeSinceLastSpawn >= Tier.SpawnIntervalSeconds;
 
-		if (bNeedsMore && bIntervalPassed && TrySpawnResponder(Tier))
+		// 자리를 못 찾았어도 간격을 둔다. 길 찾기를 매 프레임 돌리지 않는다.
+		if (bNeedsMore && bIntervalPassed)
 		{
+			TrySpawnResponder(Tier);
 			TimeSinceLastSpawn = 0.0f;
 		}
 	}
@@ -163,9 +167,9 @@ void UGunDayPoliceResponseSubsystem::DriveRespondersToPlayer()
 
 	const float EngageDistanceSquared = Settings->ResponderEngageDistance * Settings->ResponderEngageDistance;
 
-	for (const TWeakObjectPtr<AActor>& Weak : Responders)
+	for (int32 Index = Responders.Num() - 1; Index >= 0; --Index)
 	{
-		AActor* Responder = Weak.Get();
+		AActor* Responder = Responders[Index].Get();
 		if (!IsValid(Responder))
 		{
 			continue;
@@ -188,6 +192,28 @@ void UGunDayPoliceResponseSubsystem::DriveRespondersToPlayer()
 			Controller->GetMoveStatus() == EPathFollowingStatus::Moving ? TEXT("이동 중") : TEXT("멈춤"),
 			bSeesPlayer ? TEXT("보임") : TEXT("안 보임"));
 
+		// 다가오는 중인지 본다. 플레이어가 보이면 맴도는 것이 아니라 교전 중이다.
+		FResponderProgress& Record = Progress.FindOrAdd(Responder);
+		const float Distance = FMath::Sqrt(DistanceSquared);
+		if (bSeesPlayer || Distance < Record.BestDistance - 100.0f || Record.LastProgressSeconds <= 0.0f)
+		{
+			Record.BestDistance = FMath::Min(Record.BestDistance, Distance);
+			Record.LastProgressSeconds = ElapsedSeconds;
+		}
+		else if (Settings->ResponderStuckSeconds > 0.0f && ElapsedSeconds - Record.LastProgressSeconds > Settings->ResponderStuckSeconds)
+		{
+			// 좁은 틈이나 끊긴 길 앞에서 맴돌고 있다. 치우면 빈자리를 다른 곳에서 채운다.
+			UE_LOG(LogGunDay, Log, TEXT("경찰 막힘: %s 가 %.0fs 동안 %.0fm 에서 다가오지 못해 다시 투입한다."),
+				*Responder->GetName(), Settings->ResponderStuckSeconds, Distance / 100.0f);
+
+			Progress.Remove(Responder);
+			RemoveFromRosterAt(Index);
+			OnResponderDismissed.Broadcast(Responder);
+			Controller->Destroy();
+			Responder->Destroy();
+			continue;
+		}
+
 		// 가깝고 플레이어가 보이면 킷 AI 가 알아서 한다. 끼어들지 않는다.
 		// 가까워도 벽 뒤라 안 보이면 킷 AI 는 그 자리에 서 있으므로 계속 몰아 준다.
 		if (bClose && bSeesPlayer)
@@ -198,8 +224,23 @@ void UGunDayPoliceResponseSubsystem::DriveRespondersToPlayer()
 		if (Controller->MoveToActor(Player, Settings->ResponderEngageDistance * 0.5f) == EPathFollowingRequestResult::Failed)
 		{
 			UE_LOG(LogGunDay, Verbose, TEXT("경찰 접근: %s 가 플레이어까지 길을 찾지 못했다."), *Responder->GetName());
+			continue;
+		}
+
+		// 길이 중간에 끊겼으면 갈 수 있는 데까지만 간다. 내비메시가 끊긴 것인지 여기서 갈린다.
+		const UPathFollowingComponent* PathFollowing = Controller->GetPathFollowingComponent();
+		if (PathFollowing && PathFollowing->GetPath().IsValid() && PathFollowing->GetPath()->IsPartial())
+		{
+			UE_LOG(LogGunDay, Verbose, TEXT("경찰 접근: %s 의 길이 플레이어 앞에서 끊긴다(부분 경로)."), *Responder->GetName());
 		}
 	}
+}
+
+bool UGunDayPoliceResponseSubsystem::HasFullPathToPlayer(const FVector& From, const AActor& Player) const
+{
+	UWorld* World = GetWorld();
+	const UNavigationPath* Path = World ? UNavigationSystemV1::FindPathToLocationSynchronously(World, From, Player.GetActorLocation()) : nullptr;
+	return Path && Path->IsValid() && !Path->IsPartial();
 }
 
 void UGunDayPoliceResponseSubsystem::DrawResponderMarkers() const
@@ -497,6 +538,12 @@ bool UGunDayPoliceResponseSubsystem::FindSpawnLocation(const FGunDayResponseTier
 		// 마지막 몇 번은 시야 조건을 버린다. 좁은 골목에서 영영 못 찾는 것을 막는다.
 		const bool bRelaxed = Attempt >= MaxSpawnAttempts - 3;
 		if (!bRelaxed && FVector::DotProduct(Offset.GetSafeNormal(), PlayerForward) > InFrontDotThreshold)
+		{
+			continue;
+		}
+
+		// 플레이어까지 끊기지 않은 길이 있는 자리에만 놓는다. 끊긴 섬에 놓으면 그 앞에서 맴돈다.
+		if (!HasFullPathToPlayer(Candidate.Location, Player))
 		{
 			continue;
 		}

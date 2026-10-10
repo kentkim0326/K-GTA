@@ -138,9 +138,24 @@ private:
 
 	class UGunDayWantedSubsystem* GetWantedSubsystem() const;
 
+	/** 투입 지점에서 플레이어까지 끊기지 않은 길이 있는가. 끊긴 섬에 놓으면 영영 못 온다. */
+	bool HasFullPathToPlayer(const FVector& From, const AActor& Player) const;
+
 	/** 지금 투입되어 있는 인원. 약참조라 액터가 사라지면 자동으로 비워진다. */
 	UPROPERTY()
 	TArray<TWeakObjectPtr<AActor>> Responders;
+
+	/** 인원별 접근 기록. 다가오지 못하고 맴도는 인원을 골라낸다. */
+	struct FResponderProgress
+	{
+		float BestDistance = TNumericLimits<float>::Max();
+		float LastProgressSeconds = 0.0f;
+	};
+
+	TMap<TWeakObjectPtr<AActor>, FResponderProgress> Progress;
+
+	/** 월드가 시작하고 흐른 시간. */
+	float ElapsedSeconds = 0.0f;
 
 	/** 마지막 투입 이후 흐른 시간(초). */
 	float TimeSinceLastSpawn = 0.0f;
