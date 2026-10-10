@@ -18,6 +18,55 @@
 #include "GunDaySocietySubsystem.h"
 #include "GunDayWantedSubsystem.h"
 #include "Kismet/GameplayStatics.h"
+#include "UObject/UnrealType.h"
+
+void UGunDayKitEventListener::OnKitHit()
+{
+	// 인자는 ProcessEvent 에서 디스패처의 시그니처대로 읽는다. 여기는 비워 둔다.
+}
+
+void UGunDayKitEventListener::OnKitDeath()
+{
+}
+
+void UGunDayKitEventListener::ProcessEvent(UFunction* Function, void* Parms)
+{
+	if (Function && Pawn.IsValid() && Watcher.IsValid())
+	{
+		if (Function->GetFName() == GET_FUNCTION_NAME_CHECKED(UGunDayKitEventListener, OnKitHit))
+		{
+			Watcher->HandleKitEvent(Pawn.Get(), HitSignature, Parms, false);
+			return;
+		}
+
+		if (Function->GetFName() == GET_FUNCTION_NAME_CHECKED(UGunDayKitEventListener, OnKitDeath))
+		{
+			Watcher->HandleKitEvent(Pawn.Get(), DeathSignature, Parms, true);
+			return;
+		}
+	}
+
+	Super::ProcessEvent(Function, Parms);
+}
+
+namespace
+{
+	/** 디스패처 시그니처를 "이름:타입, ..." 으로 적는다. 로그용. */
+	FString DescribeSignature(const UFunction* Signature)
+	{
+		if (!Signature)
+		{
+			return TEXT("없음");
+		}
+
+		TArray<FString> Parts;
+		for (TFieldIterator<FProperty> It(Signature); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+		{
+			Parts.Add(FString::Printf(TEXT("%s:%s"), *It->GetName(), *It->GetCPPType()));
+		}
+		return FString::Join(Parts, TEXT(", "));
+	}
+}
 
 UGunDayCrimeWatcherSubsystem* UGunDayCrimeWatcherSubsystem::Get(const UObject* WorldContextObject)
 {
@@ -44,6 +93,9 @@ void UGunDayCrimeWatcherSubsystem::Deinitialize()
 	WatchedPawns.Reset();
 	WoundedByPlayer.Reset();
 	LastInjuryReportTime.Reset();
+	KilledReported.Reset();
+	Listeners.Reset();
+	LoggedClasses.Reset();
 
 	Super::Deinitialize();
 }
@@ -108,6 +160,11 @@ void UGunDayCrimeWatcherSubsystem::RefreshWatchedPawns()
 		}
 	}
 
+	Listeners.RemoveAll([](const UGunDayKitEventListener* Listener)
+	{
+		return !Listener || !Listener->Pawn.IsValid();
+	});
+
 	for (TActorIterator<APawn> It(World); It; ++It)
 	{
 		APawn* Pawn = *It;
@@ -125,8 +182,237 @@ void UGunDayCrimeWatcherSubsystem::RefreshWatchedPawns()
 		Pawn->OnDestroyed.AddDynamic(this, &UGunDayCrimeWatcherSubsystem::HandlePawnDestroyed);
 		WatchedPawns.Add(Pawn);
 
+		// 킷 캐릭터는 엔진 피해 이벤트 대신 자체 디스패처로 맞고 죽는다. 그쪽도 듣는다.
+		BindKitEvents(*Pawn);
+
 		UE_LOG(LogGunDay, VeryVerbose, TEXT("감시 시작: %s"), *Pawn->GetName());
 	}
+}
+
+FMulticastDelegateProperty* UGunDayCrimeWatcherSubsystem::FindKitDispatcher(APawn& Pawn, const TArray<FName>& Names, UObject*& OutOwner)
+{
+	for (const FName& Name : Names)
+	{
+		if (FMulticastDelegateProperty* Property = FindFProperty<FMulticastDelegateProperty>(Pawn.GetClass(), Name))
+		{
+			OutOwner = &Pawn;
+			return Property;
+		}
+	}
+
+	// 체력이나 피격 반응 컴포넌트에 디스패처를 두는 킷도 있다.
+	TInlineComponentArray<UActorComponent*> Components(&Pawn);
+	for (const FName& Name : Names)
+	{
+		for (UActorComponent* Component : Components)
+		{
+			if (FMulticastDelegateProperty* Property = Component ? FindFProperty<FMulticastDelegateProperty>(Component->GetClass(), Name) : nullptr)
+			{
+				OutOwner = Component;
+				return Property;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+void UGunDayCrimeWatcherSubsystem::BindKitEvents(APawn& Pawn)
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	if (!Settings)
+	{
+		return;
+	}
+
+	UObject* HitOwner = nullptr;
+	UObject* DeathOwner = nullptr;
+	FMulticastDelegateProperty* HitDispatcher = FindKitDispatcher(Pawn, Settings->KitHitEventNames, HitOwner);
+	FMulticastDelegateProperty* DeathDispatcher = FindKitDispatcher(Pawn, Settings->KitDeathEventNames, DeathOwner);
+
+	// 클래스마다 처음 한 번 무엇을 찾았는지 남긴다. 킷이 바뀌었을 때 여기부터 본다.
+	if (!LoggedClasses.Contains(Pawn.GetClass()))
+	{
+		LoggedClasses.Add(Pawn.GetClass());
+		UE_LOG(LogGunDay, Log, TEXT("킷 디스패처: %s — 맞음 %s(%s), 죽음 %s(%s)"),
+			*Pawn.GetClass()->GetName(),
+			HitDispatcher ? *HitDispatcher->GetName() : TEXT("없음"),
+			*DescribeSignature(HitDispatcher ? HitDispatcher->SignatureFunction : nullptr),
+			DeathDispatcher ? *DeathDispatcher->GetName() : TEXT("없음"),
+			*DescribeSignature(DeathDispatcher ? DeathDispatcher->SignatureFunction : nullptr));
+	}
+
+	if (!HitDispatcher && !DeathDispatcher)
+	{
+		return;
+	}
+
+	UGunDayKitEventListener* Listener = NewObject<UGunDayKitEventListener>(this);
+	Listener->Pawn = &Pawn;
+	Listener->Watcher = this;
+
+	if (HitDispatcher)
+	{
+		FScriptDelegate Delegate;
+		Delegate.BindUFunction(Listener, GET_FUNCTION_NAME_CHECKED(UGunDayKitEventListener, OnKitHit));
+		HitDispatcher->AddDelegate(MoveTemp(Delegate), HitOwner);
+		Listener->HitSignature = HitDispatcher->SignatureFunction;
+	}
+
+	if (DeathDispatcher)
+	{
+		FScriptDelegate Delegate;
+		Delegate.BindUFunction(Listener, GET_FUNCTION_NAME_CHECKED(UGunDayKitEventListener, OnKitDeath));
+		DeathDispatcher->AddDelegate(MoveTemp(Delegate), DeathOwner);
+		Listener->DeathSignature = DeathDispatcher->SignatureFunction;
+	}
+
+	Listeners.Add(Listener);
+}
+
+void UGunDayCrimeWatcherSubsystem::HandleKitEvent(APawn* Pawn, const UFunction* Signature, void* Parms, bool bDeath)
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	if (!IsValid(Pawn) || !Settings || !bWatchEnabled || !Settings->bAutoReportCrimes)
+	{
+		return;
+	}
+
+	// 인자 중에 플레이어 쪽 객체가 있으면 플레이어가 한 짓이다.
+	bool bByPlayer = false;
+	TArray<FString> Dump;
+
+	if (Signature && Parms)
+	{
+		for (TFieldIterator<FProperty> It(Signature); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+		{
+			const void* ValuePtr = It->ContainerPtrToValuePtr<void>(Parms);
+
+			if (const FObjectPropertyBase* ObjectProperty = CastField<FObjectPropertyBase>(*It))
+			{
+				const UObject* Value = ObjectProperty->GetObjectPropertyValue(ValuePtr);
+				bByPlayer |= IsPlayerSide(Value);
+				Dump.Add(FString::Printf(TEXT("%s=%s"), *It->GetName(), Value ? *Value->GetName() : TEXT("없음")));
+				continue;
+			}
+
+			FString Text;
+			It->ExportTextItem_Direct(Text, ValuePtr, nullptr, nullptr, PPF_None);
+			Dump.Add(FString::Printf(TEXT("%s=%s"), *It->GetName(), *Text.Left(40)));
+		}
+	}
+
+	UE_LOG(LogGunDay, Verbose, TEXT("킷 %s: %s (%s) 플레이어=%s"),
+		bDeath ? TEXT("죽음") : TEXT("맞음"), *Pawn->GetName(), *FString::Join(Dump, TEXT(", ")),
+		bByPlayer ? TEXT("예") : TEXT("아니오"));
+
+	if (bDeath)
+	{
+		if (bByPlayer || WoundedByPlayer.Contains(Pawn))
+		{
+			ReportKill(*Pawn);
+		}
+		return;
+	}
+
+	if (bByPlayer)
+	{
+		ReportInjury(*Pawn);
+	}
+}
+
+void UGunDayCrimeWatcherSubsystem::ReportInjury(AActor& Victim)
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	UGunDayWantedSubsystem* Wanted = GetWantedSubsystem();
+	if (!Settings || !Wanted)
+	{
+		return;
+	}
+
+	// 한 발 한 발을 전부 세면 연사 한 번에 수배가 최고까지 오른다.
+	const TWeakObjectPtr<AActor> Key(&Victim);
+	WoundedByPlayer.Add(Key);
+
+	if (const float* LastTime = LastInjuryReportTime.Find(Key))
+	{
+		if (ElapsedSeconds - *LastTime < Settings->InjuryReportCooldownSeconds)
+		{
+			return;
+		}
+	}
+
+	LastInjuryReportTime.Add(Key, ElapsedSeconds);
+
+	// 맞은 자리에서 총성이 난 것으로 치고 주변 시민을 흩어지게 한다.
+	if (UGunDayCrowdSubsystem* Crowd = GetWorld() ? GetWorld()->GetSubsystem<UGunDayCrowdSubsystem>() : nullptr)
+	{
+		Crowd->NotifyGunshot(Victim.GetActorLocation());
+	}
+
+	Wanted->ReportCrime(IsPoliceActor(Victim) ? EGunDayCrime::PoliceInjured : EGunDayCrime::CivilianInjured);
+}
+
+void UGunDayCrimeWatcherSubsystem::ReportKill(AActor& Victim)
+{
+	UGunDayWantedSubsystem* Wanted = GetWantedSubsystem();
+	const TWeakObjectPtr<AActor> Key(&Victim);
+	if (!Wanted || KilledReported.Contains(Key))
+	{
+		return;
+	}
+
+	KilledReported.Add(Key);
+	Wanted->ReportCrime(IsPoliceActor(Victim) ? EGunDayCrime::PoliceKilled : EGunDayCrime::CivilianKilled);
+
+	// 사람이 죽을 때마다 사회의 온도가 내려간다.
+	const UGunDayCoreSettings* Settings = GetSettings();
+	UGunDaySocietySubsystem* Society = GetWorld() ? GetWorld()->GetSubsystem<UGunDaySocietySubsystem>() : nullptr;
+	if (Settings && Society)
+	{
+		Society->AddJeong(Settings->JeongOnPlayerKill);
+	}
+
+	if (UGunDayNewsSubsystem* News = GetWorld() ? GetWorld()->GetSubsystem<UGunDayNewsSubsystem>() : nullptr)
+	{
+		News->ReportShooting(true, true);
+	}
+}
+
+bool UGunDayCrimeWatcherSubsystem::IsPlayerSide(const UObject* Object) const
+{
+	const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (!Object || !PlayerPawn)
+	{
+		return false;
+	}
+
+	if (Object == PlayerPawn || Object == PlayerPawn->GetController())
+	{
+		return true;
+	}
+
+	// 컴포넌트면 그 주인을 본다.
+	const AActor* Actor = Cast<AActor>(Object);
+	if (!Actor)
+	{
+		if (const UActorComponent* Component = Cast<UActorComponent>(Object))
+		{
+			Actor = Component->GetOwner();
+		}
+	}
+
+	// 무기, 투사체처럼 플레이어가 가진 것이면 플레이어 쪽이다. 몇 단계까지 따라간다.
+	for (int32 Depth = 0; Actor && Depth < 4; ++Depth)
+	{
+		if (Actor == PlayerPawn || Actor->GetInstigator() == PlayerPawn)
+		{
+			return true;
+		}
+		Actor = Actor->GetOwner();
+	}
+
+	return false;
 }
 
 void UGunDayCrimeWatcherSubsystem::HandlePawnDamaged(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
@@ -155,28 +441,7 @@ void UGunDayCrimeWatcherSubsystem::HandlePawnDamaged(AActor* DamagedActor, float
 		return;
 	}
 
-	// 한 발 한 발을 전부 세면 연사 한 번에 수배가 최고까지 오른다.
-	const TWeakObjectPtr<AActor> Key(DamagedActor);
-	if (const float* LastTime = LastInjuryReportTime.Find(Key))
-	{
-		if (ElapsedSeconds - *LastTime < Settings->InjuryReportCooldownSeconds)
-		{
-			WoundedByPlayer.Add(Key);
-			return;
-		}
-	}
-
-	LastInjuryReportTime.Add(Key, ElapsedSeconds);
-	WoundedByPlayer.Add(Key);
-
-	// 맞은 자리에서 총성이 난 것으로 치고 주변 시민을 흩어지게 한다.
-	if (UGunDayCrowdSubsystem* Crowd = GetWorld() ? GetWorld()->GetSubsystem<UGunDayCrowdSubsystem>() : nullptr)
-	{
-		Crowd->NotifyGunshot(DamagedActor->GetActorLocation());
-	}
-
-	const bool bPolice = IsPoliceActor(*DamagedActor);
-	Wanted->ReportCrime(bPolice ? EGunDayCrime::PoliceInjured : EGunDayCrime::CivilianInjured);
+	ReportInjury(*DamagedActor);
 }
 
 void UGunDayCrimeWatcherSubsystem::HandlePawnDestroyed(AActor* DestroyedActor)
@@ -193,24 +458,13 @@ void UGunDayCrimeWatcherSubsystem::HandlePawnDestroyed(AActor* DestroyedActor)
 	LastInjuryReportTime.Remove(Key);
 
 	// 플레이어가 때린 적이 있는 상대가 사라졌다면 사망으로 친다.
+	// 킷 디스패처로 이미 사망을 신고했으면 ReportKill 이 거른다.
 	if (WoundedByPlayer.Remove(Key) > 0)
 	{
-		const bool bPolice = IsPoliceActor(*DestroyedActor);
-		Wanted->ReportCrime(bPolice ? EGunDayCrime::PoliceKilled : EGunDayCrime::CivilianKilled);
-
-		// 사람이 죽을 때마다 사회의 온도가 내려간다.
-		const UGunDayCoreSettings* Settings = GetSettings();
-		UGunDaySocietySubsystem* Society = GetWorld() ? GetWorld()->GetSubsystem<UGunDaySocietySubsystem>() : nullptr;
-		if (Settings && Society)
-		{
-			Society->AddJeong(Settings->JeongOnPlayerKill);
-		}
-
-		if (UGunDayNewsSubsystem* News = GetWorld() ? GetWorld()->GetSubsystem<UGunDayNewsSubsystem>() : nullptr)
-		{
-			News->ReportShooting(true, true);
-		}
+		ReportKill(*DestroyedActor);
 	}
+
+	KilledReported.Remove(Key);
 }
 
 void UGunDayCrimeWatcherSubsystem::ReportPlayerGunfire()
@@ -290,34 +544,8 @@ bool UGunDayCrimeWatcherSubsystem::IsPlayerInstigator(const AController* Instiga
 		return false;
 	}
 
-	if (InstigatedBy && InstigatedBy == PlayerPawn->GetController())
-	{
-		return true;
-	}
-
-	// 투사체처럼 컨트롤러가 비어 오는 경우가 있다. 피해를 준 액터 쪽을 따라가 본다.
-	if (DamageCauser)
-	{
-		if (DamageCauser == PlayerPawn)
-		{
-			return true;
-		}
-
-		if (const AActor* Owner = DamageCauser->GetOwner())
-		{
-			if (Owner == PlayerPawn)
-			{
-				return true;
-			}
-		}
-
-		if (DamageCauser->GetInstigator() == PlayerPawn)
-		{
-			return true;
-		}
-	}
-
-	return false;
+	// 투사체처럼 컨트롤러가 비어 오는 경우가 있다. 피해를 준 액터 쪽도 따라가 본다.
+	return IsPlayerSide(InstigatedBy) || IsPlayerSide(DamageCauser);
 }
 
 const UGunDayCoreSettings* UGunDayCrimeWatcherSubsystem::GetSettings() const

@@ -34,8 +34,14 @@ struct FGunDayActiveDispute
 	/** 이 시각이 지나면 다음 단계를 판정한다. */
 	float NextStageAtSeconds = 0.0f;
 
-	/** 이번 단계에서 말할 차례. 둘이 번갈아 말한다. */
+	/** 다음에 말할 사람. 둘이 번갈아 말하고, 단계가 바뀌어도 이어 간다. */
 	bool bFirstSpeaks = true;
+
+	/** 이번 단계에서 다음에 할 대사의 순번. 대사는 적힌 순서대로 나간다. */
+	int32 LineIndex = 0;
+
+	/** 이 시각이 지나면 다음 대사를 한다. */
+	float NextLineAtSeconds = 0.0f;
 
 	/** 말리러 들어온 사람. 없을 수도 있다. */
 	UPROPERTY(BlueprintReadOnly, Category = "시비")
@@ -145,8 +151,14 @@ private:
 	/** 한 단계 올린다. 확률을 못 넘으면 가라앉는다. */
 	void AdvanceDispute(FGunDayActiveDispute& Dispute);
 
-	/** 이번 단계의 대사를 한 줄 내보낸다. */
+	/** 이번 단계의 다음 대사를 한 줄 내보낸다. 다 했으면 아무것도 하지 않는다. */
 	void SpeakLine(FGunDayActiveDispute& Dispute);
+
+	/** 새 단계에 들어섰다. 대사 순번을 처음으로 돌리고, 대사를 다 할 만큼 단계를 늘인다. */
+	void EnterStage(FGunDayActiveDispute& Dispute, const struct FGunDayDisputeScenario& Scenario);
+
+	/** 이 단계에 쓸 대사 목록. */
+	static const TArray<FString>* GetStageLines(const struct FGunDayDisputeScenario& Scenario, EGunDayDisputeStage Stage);
 
 	/** 말릴 사람을 찾는다. 정이 높을수록 잘 나선다. */
 	void TryMediation(FGunDayActiveDispute& Dispute);

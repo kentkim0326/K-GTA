@@ -9,6 +9,38 @@
 #include "GunDayCrimeWatcherSubsystem.generated.h"
 
 /**
+ * 킷 캐릭터의 이벤트 디스패처(Hit, Died 등)를 듣는 대리인. 폰 하나에 하나씩 붙는다.
+ *
+ * 킷은 엔진의 OnTakeAnyDamage 대신 자체 디스패처로 맞고 죽는다. 디스패처마다
+ * 인자 모양이 달라 정해진 시그니처의 함수를 걸 수 없으므로, 인자 없는 함수를 걸고
+ * ProcessEvent 에서 디스패처의 시그니처대로 인자를 읽는다. 킷 파일은 건드리지 않는다.
+ */
+UCLASS()
+class GUNDAYCORE_API UGunDayKitEventListener : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	TWeakObjectPtr<APawn> Pawn;
+	TWeakObjectPtr<class UGunDayCrimeWatcherSubsystem> Watcher;
+
+	/** 들고 있는 디스패처의 시그니처. 인자를 읽을 때 쓴다. */
+	UPROPERTY()
+	TObjectPtr<UFunction> HitSignature;
+
+	UPROPERTY()
+	TObjectPtr<UFunction> DeathSignature;
+
+	UFUNCTION()
+	void OnKitHit();
+
+	UFUNCTION()
+	void OnKitDeath();
+
+	virtual void ProcessEvent(UFunction* Function, void* Parms) override;
+};
+
+/**
  * 범죄 자동 감지.
  *
  * 킷 블루프린트를 고치지 않고 수배를 올리기 위한 장치다.
@@ -56,7 +88,25 @@ public:
 	UFUNCTION(BlueprintPure, Category = "GunDay|Crime")
 	int32 GetWatchedPawnCount() const { return WatchedPawns.Num(); }
 
+	/** 킷 디스패처가 울렸다. 대리인이 부른다. Parms 는 Signature 의 모양이다. */
+	void HandleKitEvent(APawn* Pawn, const UFunction* Signature, void* Parms, bool bDeath);
+
 private:
+	/** 폰과 그 컴포넌트에서 이름이 맞는 디스패처를 찾아 대리인을 건다. */
+	void BindKitEvents(APawn& Pawn);
+
+	/** 이름 목록 중 하나와 맞는 디스패처를 폰이나 컴포넌트에서 찾는다. */
+	static class FMulticastDelegateProperty* FindKitDispatcher(APawn& Pawn, const TArray<FName>& Names, UObject*& OutOwner);
+
+	/** 부상 신고. 엔진 피해 이벤트와 킷 디스패처가 같이 쓴다. */
+	void ReportInjury(AActor& Victim);
+
+	/** 사망 신고. 한 사람을 두 번 세지 않는다. */
+	void ReportKill(AActor& Victim);
+
+	/** 이 객체가 플레이어 쪽인가. 플레이어 폰, 컨트롤러, 그 무기나 투사체까지 본다. */
+	bool IsPlayerSide(const UObject* Object) const;
+
 	UFUNCTION()
 	void HandlePawnDamaged(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
@@ -84,6 +134,16 @@ private:
 
 	/** 폰별 마지막 부상 신고 시각. 한 발 한 발을 전부 세지 않기 위한 쿨다운. */
 	TMap<TWeakObjectPtr<AActor>, float> LastInjuryReportTime;
+
+	/** 이미 사망으로 신고한 폰. 디스패처와 파괴 이벤트가 겹쳐도 한 번만 센다. */
+	TSet<TWeakObjectPtr<AActor>> KilledReported;
+
+	/** 폰마다 붙인 대리인. 가비지 컬렉션에서 지키려고 들고 있는다. */
+	UPROPERTY()
+	TArray<TObjectPtr<UGunDayKitEventListener>> Listeners;
+
+	/** 디스패처 구성을 이미 로그로 남긴 클래스. 처음 한 번만 남긴다. */
+	TSet<TWeakObjectPtr<UClass>> LoggedClasses;
 
 	float TimeSinceRescan = 0.0f;
 

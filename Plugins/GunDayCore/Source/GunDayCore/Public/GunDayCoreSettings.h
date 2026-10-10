@@ -118,6 +118,18 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "범죄 감지")
 	TArray<TSoftClassPtr<AActor>> PoliceClasses;
 
+	/**
+	 * 킷 캐릭터가 맞았을 때 울리는 이벤트 디스패처 이름. 폰과 그 컴포넌트에서 찾는다.
+	 * 킷은 엔진 피해 이벤트를 거의 쓰지 않아서 이것을 들어야 플레이어의 가해가 잡힌다.
+	 * 킷이 버전업으로 이름을 바꾸면 여기만 고친다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "범죄 감지")
+	TArray<FName> KitHitEventNames;
+
+	/** 킷 캐릭터가 죽었을 때 울리는 이벤트 디스패처 이름. */
+	UPROPERTY(config, EditAnywhere, Category = "범죄 감지")
+	TArray<FName> KitDeathEventNames;
+
 	/** 총성에 시민이 반응하게 한다. */
 	UPROPERTY(config, EditAnywhere, Category = "군중 반응")
 	bool bEnableCrowdReaction;
@@ -214,6 +226,13 @@ public:
 	/** 플레이어로부터 이 반경 안의 시비 지점과 시민만 본다. */
 	UPROPERTY(config, EditAnywhere, Category = "시비", meta = (ClampMin = "0.0"))
 	float DisputeSearchRadius;
+
+	/**
+	 * 대사 한 줄과 다음 줄 사이의 간격(초). 단계 안의 대사는 적힌 순서대로 번갈아 나간다.
+	 * 대사가 많은 단계는 Stage Seconds 보다 길어진다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "시비", meta = (ClampMin = "0.3", Units = "s"))
+	float DisputeLineIntervalSeconds;
 
 	/** 동시에 진행할 수 있는 시비 수. */
 	UPROPERTY(config, EditAnywhere, Category = "시비", meta = (ClampMin = "0"))

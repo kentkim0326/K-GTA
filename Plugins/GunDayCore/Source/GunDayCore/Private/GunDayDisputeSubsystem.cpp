@@ -100,6 +100,12 @@ void UGunDayDisputeSubsystem::Tick(float DeltaTime)
 			continue;
 		}
 
+		// 단계 안의 대사를 적힌 순서대로 하나씩 내보낸다.
+		if (ElapsedSeconds >= Dispute.NextLineAtSeconds)
+		{
+			SpeakLine(Dispute);
+		}
+
 		if (ElapsedSeconds >= Dispute.NextStageAtSeconds)
 		{
 			AdvanceDispute(Dispute);
@@ -548,6 +554,7 @@ bool UGunDayDisputeSubsystem::BeginDispute(APawn& First, APawn& Second, int32 Sc
 		*Scenario->Name, *First.GetName(), *Second.GetName(), Dispute.Friction);
 
 	OnDisputeStageChanged.Broadcast(&First, &Second, EGunDayDisputeStage::Verbal);
+	EnterStage(Active.Last(), *Scenario);
 	SpeakLine(Active.Last());
 
 	return true;
@@ -665,6 +672,7 @@ void UGunDayDisputeSubsystem::AdvanceDispute(FGunDayActiveDispute& Dispute)
 	UE_LOG(LogGunDay, Log, TEXT("시비: %s (%s)."), bWasVerbal ? TEXT("몸싸움이 됐다") : TEXT("총을 꺼냈다"), *Scenario->Name);
 
 	OnDisputeStageChanged.Broadcast(Dispute.First.Get(), Dispute.Second.Get(), Dispute.Stage);
+	EnterStage(Dispute, *Scenario);
 	SpeakLine(Dispute);
 
 	// 몸싸움이 되면 누가 말리러 나설 수 있다.
@@ -682,19 +690,21 @@ void UGunDayDisputeSubsystem::SpeakLine(FGunDayActiveDispute& Dispute)
 		return;
 	}
 
-	const TArray<FString>* Lines = nullptr;
-	switch (Dispute.Stage)
+	const TArray<FString>* Lines = GetStageLines(*Scenario, Dispute.Stage);
+	if (!Lines || !Lines->IsValidIndex(Dispute.LineIndex))
 	{
-	case EGunDayDisputeStage::Verbal:  Lines = &Scenario->VerbalLines; break;
-	case EGunDayDisputeStage::Shoving: Lines = &Scenario->ShovingLines; break;
-	case EGunDayDisputeStage::Drawn:   Lines = &Scenario->DrawnLines; break;
-	default: return;
-	}
-
-	if (!Lines || Lines->Num() == 0)
-	{
+		// 이 단계의 대사를 다 했다. 단계가 바뀔 때까지 말없이 노려본다.
+		Dispute.NextLineAtSeconds = TNumericLimits<float>::Max();
 		return;
 	}
+
+	const UGunDayCoreSettings* Settings = GetSettings();
+	const float Interval = Settings ? Settings->DisputeLineIntervalSeconds : 2.0f;
+
+	// 대사는 주고받는 순서로 적혀 있다. 존댓말에서 반말로 무너지는 속도가 이 순서에 있다.
+	const FString& Line = (*Lines)[Dispute.LineIndex];
+	++Dispute.LineIndex;
+	Dispute.NextLineAtSeconds = ElapsedSeconds + Interval;
 
 	APawn* Speaker = Dispute.bFirstSpeaks ? Dispute.First.Get() : Dispute.Second.Get();
 	Dispute.bFirstSpeaks = !Dispute.bFirstSpeaks;
@@ -704,17 +714,42 @@ void UGunDayDisputeSubsystem::SpeakLine(FGunDayActiveDispute& Dispute)
 		return;
 	}
 
-	const FString& Line = (*Lines)[FMath::RandHelper(Lines->Num())];
 	OnDisputeLine.Broadcast(Speaker, Line, Dispute.Stage);
+	UE_LOG(LogGunDay, Verbose, TEXT("시비 대사: %s \"%s\""), *Speaker->GetName(), *Line);
 
-	// 자막 시스템이 붙기 전까지는 머리 위에 띄워 둔다.
+	// 자막 시스템이 붙기 전까지는 머리 위에 띄워 둔다. 다음 줄이 나올 때까지 남긴다.
 	if (GunDayDebug::IsHUDEnabled())
 	{
 		if (UWorld* World = GetWorld())
 		{
 			DrawDebugString(World, FVector(0.0f, 0.0f, 120.0f), Line, Speaker,
-				FColor(240, 220, 120), 3.0f, true);
+				FColor(240, 220, 120), Interval, true);
 		}
+	}
+}
+
+void UGunDayDisputeSubsystem::EnterStage(FGunDayActiveDispute& Dispute, const FGunDayDisputeScenario& Scenario)
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	const float Interval = Settings ? Settings->DisputeLineIntervalSeconds : 2.0f;
+
+	Dispute.LineIndex = 0;
+	Dispute.NextLineAtSeconds = ElapsedSeconds;
+
+	// 대사를 끝까지 하고 한 박자 쉰 뒤에 다음 단계를 판정한다. 말이 끊기면 안 된다.
+	const TArray<FString>* Lines = GetStageLines(Scenario, Dispute.Stage);
+	const float SpeechSeconds = Lines ? Lines->Num() * Interval : 0.0f;
+	Dispute.NextStageAtSeconds = ElapsedSeconds + FMath::Max(Scenario.StageSeconds, SpeechSeconds + Interval * 0.5f);
+}
+
+const TArray<FString>* UGunDayDisputeSubsystem::GetStageLines(const FGunDayDisputeScenario& Scenario, EGunDayDisputeStage Stage)
+{
+	switch (Stage)
+	{
+	case EGunDayDisputeStage::Verbal:  return &Scenario.VerbalLines;
+	case EGunDayDisputeStage::Shoving: return &Scenario.ShovingLines;
+	case EGunDayDisputeStage::Drawn:   return &Scenario.DrawnLines;
+	default: return nullptr;
 	}
 }
 
@@ -767,7 +802,7 @@ void UGunDayDisputeSubsystem::FireShot(FGunDayActiveDispute& Dispute)
 	// 총성에 주변이 흩어진다. 플레이어가 쏜 것이 아니므로 수배는 오르지 않는다.
 	if (UGunDayCrowdSubsystem* Crowd = GetWorld() ? GetWorld()->GetSubsystem<UGunDayCrowdSubsystem>() : nullptr)
 	{
-		Crowd->NotifyGunshot(Shooter->GetActorLocation());
+		Crowd->NotifyGunshot(Shooter->GetActorLocation(), false);
 	}
 }
 
@@ -866,10 +901,25 @@ void UGunDayDisputeSubsystem::GatherCandidates(const FVector& Center, float Radi
 		CastMembers.Add(It->CastSecond.Get());
 	}
 
+	// 시민으로 칠 수 있는 사람만 끌어들인다. 킷의 보조 폰(BP_Sensing_Pawn)이 섞이면
+	// 한 사람이 허공에 대고 싸우는 꼴이 된다.
+	const UGunDayCrowdSubsystem* Crowd = World->GetSubsystem<UGunDayCrowdSubsystem>();
+
 	for (TActorIterator<APawn> It(World); It; ++It)
 	{
 		APawn* Pawn = *It;
 		if (!IsValid(Pawn) || Pawn == Player || IsInDispute(Pawn) || CastMembers.Contains(Pawn))
+		{
+			continue;
+		}
+
+		if (Crowd && !Crowd->IsCivilian(*Pawn))
+		{
+			continue;
+		}
+
+		// 컨트롤러가 없으면 쓰러진 사람이다.
+		if (!Pawn->GetController())
 		{
 			continue;
 		}

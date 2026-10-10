@@ -40,6 +40,7 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 	, bEnableDisputes(true)
 	, DisputeIntervalSeconds(25.0f)
 	, DisputeSearchRadius(4000.0f)
+	, DisputeLineIntervalSeconds(2.0f)
 	, MaxActiveDisputes(2)
 	, bStartDisputesWithoutSpots(true)
 	, bAmbientSparkDisputes(true)
@@ -73,6 +74,10 @@ UGunDayCoreSettings::UGunDayCoreSettings()
 	CrimeHeat.Add(EGunDayCrime::PoliceKilled, 160.0f);
 	CrimeHeat.Add(EGunDayCrime::VehicleTheft, 20.0f);
 	CrimeHeat.Add(EGunDayCrime::PropertyDamage, 8.0f);
+
+	// 킷 v2.2 의 디스패처 이름. BP_AICharacterBase 에서 확인했다.
+	KitHitEventNames = { FName(TEXT("Hit")), FName(TEXT("Damaged")), FName(TEXT("OnDamaged")) };
+	KitDeathEventNames = { FName(TEXT("Died")), FName(TEXT("EnemyDied")), FName(TEXT("OnDeath")) };
 
 	// 레벨 1~5 문턱값.
 	WantedLevelThresholds = { 20.0f, 80.0f, 180.0f, 320.0f, 500.0f };

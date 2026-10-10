@@ -90,13 +90,24 @@ void UGunDayCrowdSubsystem::Tick(float DeltaTime)
 		{
 			Entry.bReported = true;
 
-			if (Wanted)
+			// 남이 쏜 총성만 들었다면 신고는 해도 플레이어를 쫓지 않는다.
+			if (Entry.bHeardPlayer)
 			{
-				Wanted->AddHeat(Settings->CivilianReportHeat);
+				if (Wanted)
+				{
+					Wanted->AddHeat(Settings->CivilianReportHeat);
+				}
+
+				SetWitnessRegistered(Entry, true);
 			}
 
-			SetWitnessRegistered(Entry, true);
 			OnCivilianReported.Broadcast(Civilian);
+		}
+
+		// 남의 총성을 듣고 이미 신고한 뒤에 플레이어 총성을 들었다. 목격자로 잡는다.
+		if (Entry.bReported && Entry.bHeardPlayer && !Entry.bWitnessRegistered)
+		{
+			SetWitnessRegistered(Entry, true);
 		}
 
 		// 목격 시간이 끝나면 진정한 것으로 본다.
@@ -114,7 +125,7 @@ void UGunDayCrowdSubsystem::Tick(float DeltaTime)
 	}
 }
 
-void UGunDayCrowdSubsystem::NotifyGunshot(FVector NoiseLocation)
+void UGunDayCrowdSubsystem::NotifyGunshot(FVector NoiseLocation, bool bPlayerCaused)
 {
 	const UGunDayCoreSettings* Settings = GetSettings();
 	UWorld* World = GetWorld();
@@ -161,11 +172,13 @@ void UGunDayCrowdSubsystem::NotifyGunshot(FVector NoiseLocation)
 		if (Existing != INDEX_NONE)
 		{
 			Alerted[Existing].WitnessUntilSeconds = ElapsedSeconds + Settings->CivilianWitnessSeconds;
+			Alerted[Existing].bHeardPlayer |= bPlayerCaused;
 			continue;
 		}
 
 		FGunDayAlertedCivilian Entry;
 		Entry.Civilian = Pawn;
+		Entry.bHeardPlayer = bPlayerCaused;
 		Entry.ReportAtSeconds = ElapsedSeconds + Settings->CivilianReportDelaySeconds;
 		Entry.WitnessUntilSeconds = ElapsedSeconds + Settings->CivilianWitnessSeconds;
 		Alerted.Add(Entry);

@@ -28,6 +28,9 @@ struct FGunDayAlertedCivilian
 	bool bReported = false;
 
 	bool bWitnessRegistered = false;
+
+	/** 플레이어가 낸 총성을 들었는가. 남이 쏜 총성만 들었다면 신고해도 수배는 오르지 않는다. */
+	bool bHeardPlayer = false;
 };
 
 /**
@@ -63,9 +66,12 @@ public:
 	/**
 	 * 그 지점에서 총성이 났다고 알린다.
 	 * 범죄 감지가 켜져 있으면 자동으로 불린다. 직접 부를 일은 많지 않다.
+	 *
+	 * bPlayerCaused 를 끄면 시민은 흩어지기만 하고 신고해도 수배를 올리지 않는다.
+	 * 시민끼리 쏜 총에 플레이어가 쫓기면 안 된다.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "GunDay|Crowd")
-	void NotifyGunshot(FVector NoiseLocation);
+	void NotifyGunshot(FVector NoiseLocation, bool bPlayerCaused = true);
 
 	/** 지금 놀란 상태인 시민 수. */
 	UFUNCTION(BlueprintPure, Category = "GunDay|Crowd")
@@ -79,6 +85,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GunDay|Crowd")
 	void CalmAll();
 
+	/**
+	 * 이 폰을 시민으로 볼 것인가. 플레이어와 경찰은 뺀다.
+	 * Civilian Classes 가 차 있으면 그 클래스만 시민이다. 킷의 보조 폰이 섞이지 않게 한다.
+	 */
+	bool IsCivilian(const APawn& Pawn) const;
+
 	/** 시민 한 명이 총성을 들었다. 킷 쪽 반응을 붙이려면 여기에 건다. */
 	UPROPERTY(BlueprintAssignable, Category = "GunDay|Crowd")
 	FGunDayCivilianAlerted OnCivilianAlerted;
@@ -90,9 +102,6 @@ public:
 private:
 	/** 소리의 반대쪽 내비메시 위로 달아나게 한다. */
 	void DriveFlee(APawn& Civilian, const FVector& NoiseLocation) const;
-
-	/** 이 폰을 시민으로 볼 것인가. 플레이어와 경찰은 뺀다. */
-	bool IsCivilian(const APawn& Pawn) const;
 
 	/** 목격자 등록을 하나 올리거나 내린다. */
 	void SetWitnessRegistered(FGunDayAlertedCivilian& Entry, bool bRegistered);
