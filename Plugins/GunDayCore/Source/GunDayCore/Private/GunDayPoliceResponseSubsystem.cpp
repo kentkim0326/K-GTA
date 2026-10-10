@@ -171,17 +171,27 @@ void UGunDayPoliceResponseSubsystem::DriveRespondersToPlayer()
 			continue;
 		}
 
-		// 교전 거리 안에 들어왔으면 킷 AI 가 알아서 한다. 끼어들지 않는다.
-		if (FVector::DistSquared(Responder->GetActorLocation(), Player->GetActorLocation()) <= EngageDistanceSquared)
-		{
-			continue;
-		}
-
 		const APawn* ResponderPawn = Cast<APawn>(Responder);
 		AAIController* Controller = ResponderPawn ? Cast<AAIController>(ResponderPawn->GetController()) : nullptr;
 		if (!Controller)
 		{
 			UE_LOG(LogGunDay, Verbose, TEXT("경찰 접근: %s 에 AI 컨트롤러가 없어 움직이지 못한다."), *Responder->GetName());
+			continue;
+		}
+
+		const float DistanceSquared = FVector::DistSquared(Responder->GetActorLocation(), Player->GetActorLocation());
+		const bool bClose = DistanceSquared <= EngageDistanceSquared;
+		const bool bSeesPlayer = Controller->LineOfSightTo(Player);
+
+		UE_LOG(LogGunDay, Verbose, TEXT("경찰 상태: %s %.0fm %s %s"),
+			*Responder->GetName(), FMath::Sqrt(DistanceSquared) / 100.0f,
+			Controller->GetMoveStatus() == EPathFollowingStatus::Moving ? TEXT("이동 중") : TEXT("멈춤"),
+			bSeesPlayer ? TEXT("보임") : TEXT("안 보임"));
+
+		// 가깝고 플레이어가 보이면 킷 AI 가 알아서 한다. 끼어들지 않는다.
+		// 가까워도 벽 뒤라 안 보이면 킷 AI 는 그 자리에 서 있으므로 계속 몰아 준다.
+		if (bClose && bSeesPlayer)
+		{
 			continue;
 		}
 
