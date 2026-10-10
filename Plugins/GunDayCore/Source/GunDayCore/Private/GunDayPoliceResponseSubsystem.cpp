@@ -15,6 +15,7 @@
 #include "GunDayDebug.h"
 #include "GunDayWantedSubsystem.h"
 #include "Kismet/GameplayStatics.h"
+#include "Navigation/PathFollowingComponent.h"
 #include "NavigationSystem.h"
 
 namespace
@@ -180,10 +181,14 @@ void UGunDayPoliceResponseSubsystem::DriveRespondersToPlayer()
 		AAIController* Controller = ResponderPawn ? Cast<AAIController>(ResponderPawn->GetController()) : nullptr;
 		if (!Controller)
 		{
+			UE_LOG(LogGunDay, Verbose, TEXT("경찰 접근: %s 에 AI 컨트롤러가 없어 움직이지 못한다."), *Responder->GetName());
 			continue;
 		}
 
-		Controller->MoveToActor(Player, Settings->ResponderEngageDistance * 0.5f);
+		if (Controller->MoveToActor(Player, Settings->ResponderEngageDistance * 0.5f) == EPathFollowingRequestResult::Failed)
+		{
+			UE_LOG(LogGunDay, Verbose, TEXT("경찰 접근: %s 가 플레이어까지 길을 찾지 못했다."), *Responder->GetName());
+		}
 	}
 }
 
@@ -433,6 +438,16 @@ bool UGunDayPoliceResponseSubsystem::TrySpawnResponder(const FGunDayResponseTier
 	if (!Spawned)
 	{
 		return false;
+	}
+
+	// 킷 캐릭터는 생성 도중에 AI 컨트롤러를 만들려다 실패할 때가 있다(ConstructionScript 경고).
+	// 뇌 없이 서 있으면 쫓아오지 않으므로 생성이 끝난 지금 붙여 준다.
+	if (APawn* SpawnedPawn = Cast<APawn>(Spawned))
+	{
+		if (!SpawnedPawn->GetController())
+		{
+			SpawnedPawn->SpawnDefaultController();
+		}
 	}
 
 	AddToRoster(Spawned);
