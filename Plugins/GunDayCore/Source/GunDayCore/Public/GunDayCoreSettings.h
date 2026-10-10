@@ -186,6 +186,29 @@ public:
 	bool bStartDisputesWithoutSpots;
 
 	/**
+	 * 시비 지점이 배역을 직접 세운다. 지점마다 Bring Own Cast 로 따로 끌 수 있다.
+	 * 빈 맵에서도 시나리오대로 시비가 나게 하는 장치다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "시비|배역")
+	bool bSpawnDisputeCast;
+
+	/** 플레이어가 이 거리 안에 들어오면 배역을 세운다. 시야 안이면 가려질 때까지 기다린다. */
+	UPROPERTY(config, EditAnywhere, Category = "시비|배역", meta = (ClampMin = "0.0"))
+	float DisputeCastSpawnDistance;
+
+	/** 플레이어가 이 거리 밖으로 나가면 배역을 치운다. 세우는 거리보다 멀게 둔다. */
+	UPROPERTY(config, EditAnywhere, Category = "시비|배역", meta = (ClampMin = "0.0"))
+	float DisputeCastDespawnDistance;
+
+	/** 두 배역이 마주 서는 간격. */
+	UPROPERTY(config, EditAnywhere, Category = "시비|배역", meta = (ClampMin = "50.0"))
+	float DisputeCastSpacing;
+
+	/** 배역이 선 지점은 플레이어가 이 거리 안에 들어오면 바로 시작한다. 지켜볼 수 있는 거리로 둔다. */
+	UPROPERTY(config, EditAnywhere, Category = "시비|배역", meta = (ClampMin = "0.0"))
+	float DisputeCastStartDistance;
+
+	/**
 	 * 시비 상황 목록. 주차, 담배, 노인석, 편의점.
 	 * 대사는 작품에 맞게 직접 고친다. 기본값은 구조를 보여 주기 위한 자리표다.
 	 */

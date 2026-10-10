@@ -46,6 +46,9 @@ struct FGunDayActiveDispute
 
 	/** 이 시비의 마찰. 시작할 때 재서 들고 있는다. */
 	float Friction = 0.0f;
+
+	/** 이 시비가 난 지점. 지점 없이 난 시비면 비어 있다. */
+	TWeakObjectPtr<class AGunDayDisputeSpot> Spot;
 };
 
 /**
@@ -115,11 +118,29 @@ public:
 	FGunDayDisputeShot OnDisputeShot;
 
 private:
-	/** 레벨에 놓인 시비 지점 중 쓸 만한 곳을 찾아 시비를 시작한다. */
+	/** 레벨에 놓인 시비 지점 중 쓸 만한 곳을 찾아 시비를 시작한다. 배역을 세우는 지점은 뺀다. */
 	bool TryStartDisputeAtSpot();
 
+	/** 배역을 세우는 지점들을 돌본다. 세우고, 치우고, 플레이어가 다가오면 시작한다. */
+	void UpdateCastSpots();
+
+	/** 지점에 상황을 고르고 배역 둘을 세운다. */
+	bool SpawnCast(class AGunDayDisputeSpot& Spot);
+
+	/** 지점의 배역을 치운다. 시비 중이면 건드리지 않는다. */
+	void DismissCast(class AGunDayDisputeSpot& Spot);
+
+	/** 지점이 지금 플레이어 눈에 보이는가. 보이면 배역을 세우지 않는다. */
+	bool IsSpotInView(const class AGunDayDisputeSpot& Spot) const;
+
+	/** 지점이 배역을 세우는 방식인가. */
+	bool UsesOwnCast(const class AGunDayDisputeSpot& Spot) const;
+
+	/** 지점에서 쓸 상황 번호를 고른다. */
+	int32 PickScenarioForSpot(const class AGunDayDisputeSpot& Spot) const;
+
 	/** 두 사람으로 시비를 시작한다. */
-	bool BeginDispute(APawn& First, APawn& Second, int32 ScenarioIndex);
+	bool BeginDispute(APawn& First, APawn& Second, int32 ScenarioIndex, class AGunDayDisputeSpot* Spot = nullptr);
 
 	/** 한 단계 올린다. 확률을 못 넘으면 가라앉는다. */
 	void AdvanceDispute(FGunDayActiveDispute& Dispute);
@@ -149,6 +170,8 @@ private:
 	float ElapsedSeconds = 0.0f;
 
 	float TimeSinceLastAttempt = 0.0f;
+
+	float TimeSinceCastUpdate = 0.0f;
 
 	bool bDisputesEnabled = true;
 };

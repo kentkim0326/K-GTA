@@ -7,6 +7,8 @@
 #include "UObject/SoftObjectPtr.h"
 #include "GunDayTypes.generated.h"
 
+class APawn;
+
 /** 수배 열기(heat)를 올리는 행위. 값별 가중치는 GunDayCoreSettings 에서 조정한다. */
 UENUM(BlueprintType)
 enum class EGunDayCrime : uint8
@@ -175,6 +177,22 @@ struct GUNDAYCORE_API FGunDayDisputeScenario
 	/** 인정하고 물러설 때의 대사. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비", meta = (MultiLine = "true"))
 	TArray<FString> ApologyLines;
+
+	/**
+	 * 시비 지점이 세우는 배역 중 거는 쪽. 끝까지 가면 이쪽이 쏜다.
+	 * 대기형이면 몇 달 전에 이미 결심한 사람이다.
+	 * 비워 두면 Civilian Classes 에서 아무나 고른다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비|배역")
+	TSoftClassPtr<APawn> FirstClass;
+
+	/**
+	 * 받는 쪽. 인정하는 대사(Apology Lines)는 이쪽이 한다.
+	 * 대기형이면 "저는 전달만 합니다" 쪽이다.
+	 * 비워 두면 Civilian Classes 에서 아무나 고른다.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "시비|배역")
+	TSoftClassPtr<APawn> SecondClass;
 };
 
 /**

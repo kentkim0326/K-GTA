@@ -3,11 +3,15 @@
 #include "GunDayDisputeSubsystem.h"
 
 #include "AIController.h"
+#include "Components/CapsuleComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
+#include "NavigationSystem.h"
 #include "GunDayCore.h"
 #include "GunDayCoreSettings.h"
 #include "GunDayCrowdSubsystem.h"
@@ -17,6 +21,15 @@
 #include "GunDayPoliceResponseSubsystem.h"
 #include "GunDaySocietySubsystem.h"
 #include "Kismet/GameplayStatics.h"
+
+namespace
+{
+	/** 배역 지점을 살피는 간격(초). 반응 속도가 아니라 비용을 위한 값이다. */
+	constexpr float CastUpdateIntervalSeconds = 0.5f;
+
+	/** 시선과 이 이상 같은 방향이면 시야 안으로 본다. 약 60도. */
+	constexpr float InViewDotThreshold = 0.5f;
+}
 
 UGunDayDisputeSubsystem* UGunDayDisputeSubsystem::Get(const UObject* WorldContextObject)
 {
@@ -98,6 +111,14 @@ void UGunDayDisputeSubsystem::Tick(float DeltaTime)
 		}
 	}
 
+	// 배역을 세우는 지점은 주기를 기다리지 않는다. 플레이어가 다가오면 바로 시작한다.
+	TimeSinceCastUpdate += DeltaTime;
+	if (TimeSinceCastUpdate >= CastUpdateIntervalSeconds)
+	{
+		TimeSinceCastUpdate = 0.0f;
+		UpdateCastSpots();
+	}
+
 	// 새 시비를 일으킬 때가 됐는지 본다.
 	if (TimeSinceLastAttempt >= Settings->DisputeIntervalSeconds && Active.Num() < Settings->MaxActiveDisputes)
 	{
@@ -125,11 +146,20 @@ bool UGunDayDisputeSubsystem::TryStartDisputeAtSpot()
 	const float MaxDistanceSquared = Settings->DisputeSearchRadius * Settings->DisputeSearchRadius;
 
 	// 레벨에 놓인 시비 지점부터 본다. 골목마다 다른 상황이 나오는 것은 여기서 갈린다.
+	// 배역을 세우는 지점은 UpdateCastSpots 가 따로 돌본다.
+	bool bLevelHasSpots = false;
 	TArray<AGunDayDisputeSpot*> Candidates;
 	for (TActorIterator<AGunDayDisputeSpot> It(World); It; ++It)
 	{
 		AGunDayDisputeSpot* Spot = *It;
-		if (!IsValid(Spot) || !Spot->bEnabled)
+		if (!IsValid(Spot))
+		{
+			continue;
+		}
+
+		bLevelHasSpots = true;
+
+		if (!Spot->bEnabled || UsesOwnCast(*Spot))
 		{
 			continue;
 		}
@@ -160,11 +190,7 @@ bool UGunDayDisputeSubsystem::TryStartDisputeAtSpot()
 
 		SortByFriction(People);
 
-		const int32 ScenarioIndex = (Spot->ScenarioIndices.Num() > 0)
-			? Spot->ScenarioIndices[FMath::RandHelper(Spot->ScenarioIndices.Num())]
-			: FMath::RandHelper(FMath::Max(1, Settings->DisputeScenarios.Num()));
-
-		if (BeginDispute(*People[0], *People[1], ScenarioIndex))
+		if (BeginDispute(*People[0], *People[1], PickScenarioForSpot(*Spot), Spot))
 		{
 			Spot->LastUsedSeconds = ElapsedSeconds;
 			return true;
@@ -173,8 +199,259 @@ bool UGunDayDisputeSubsystem::TryStartDisputeAtSpot()
 		return false;
 	}
 
-	// 시비 지점이 하나도 없으면 플레이어 주변 아무나로 시작한다.
-	return Settings->bStartDisputesWithoutSpots && StartDisputeNearPlayer(-1);
+	// 레벨에 시비 지점이 하나도 없을 때만 플레이어 주변 아무나로 시작한다.
+	// 지점이 있는 맵에서 아무나 붙으면 골목마다 정해 둔 상황이 흐려진다.
+	return !bLevelHasSpots && Settings->bStartDisputesWithoutSpots && StartDisputeNearPlayer(-1);
+}
+
+void UGunDayDisputeSubsystem::UpdateCastSpots()
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	UWorld* World = GetWorld();
+	const APawn* Player = UGameplayStatics::GetPlayerPawn(this, 0);
+	if (!Settings || !World || !Player || !Settings->bSpawnDisputeCast)
+	{
+		return;
+	}
+
+	const FVector PlayerLocation = Player->GetActorLocation();
+
+	for (TActorIterator<AGunDayDisputeSpot> It(World); It; ++It)
+	{
+		AGunDayDisputeSpot* Spot = *It;
+		if (!IsValid(Spot) || !UsesOwnCast(*Spot))
+		{
+			continue;
+		}
+
+		const float Distance = FVector::Dist(Spot->GetActorLocation(), PlayerLocation);
+
+		// 멀어지면 치운다. 총이 오간 자리도 이때 풀린다.
+		if (Distance > Settings->DisputeCastDespawnDistance)
+		{
+			DismissCast(*Spot);
+			continue;
+		}
+
+		// 한쪽만 남았으면 이 배역으로는 더 못 한다. 플레이어가 떠나면 새로 세운다.
+		if (!Spot->HasCast())
+		{
+			const bool bNoCastYet = !Spot->CastFirst.IsValid() && !Spot->CastSecond.IsValid();
+			if (bNoCastYet && !Spot->bCastSpent
+				&& Distance <= Settings->DisputeCastSpawnDistance
+				&& !IsSpotInView(*Spot))
+			{
+				SpawnCast(*Spot);
+			}
+			continue;
+		}
+
+		if (Spot->bCastSpent || Distance > Settings->DisputeCastStartDistance)
+		{
+			continue;
+		}
+
+		if (ElapsedSeconds - Spot->LastUsedSeconds < Spot->CooldownSeconds || Active.Num() >= Settings->MaxActiveDisputes)
+		{
+			continue;
+		}
+
+		APawn* First = Spot->CastFirst.Get();
+		APawn* Second = Spot->CastSecond.Get();
+		if (IsInDispute(First) || IsInDispute(Second))
+		{
+			continue;
+		}
+
+		// 컨트롤러가 떨어졌으면 쓰러진 것으로 본다. 플레이어가 배역을 쏜 경우다.
+		if (!First->GetController() || !Second->GetController())
+		{
+			Spot->bCastSpent = true;
+			continue;
+		}
+
+		if (BeginDispute(*First, *Second, Spot->CastScenarioIndex, Spot))
+		{
+			Spot->LastUsedSeconds = ElapsedSeconds;
+		}
+	}
+}
+
+bool UGunDayDisputeSubsystem::SpawnCast(AGunDayDisputeSpot& Spot)
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	UWorld* World = GetWorld();
+	if (!Settings || !World)
+	{
+		return false;
+	}
+
+	const int32 ScenarioIndex = PickScenarioForSpot(Spot);
+	const FGunDayDisputeScenario* Scenario = GetScenario(ScenarioIndex);
+	if (!Scenario)
+	{
+		UE_LOG(LogGunDay, Warning, TEXT("시비 배역: %s 의 %d번 상황이 설정에 없다."), *Spot.GetName(), ScenarioIndex);
+		Spot.bCastSpent = true;
+		return false;
+	}
+
+	// 상황에 정한 배역이 없으면 시민 목록에서 아무나 데려온다.
+	auto ResolveClass = [Settings](const TSoftClassPtr<APawn>& Wanted) -> UClass*
+	{
+		if (!Wanted.IsNull())
+		{
+			return Wanted.LoadSynchronous();
+		}
+
+		if (Settings->CivilianClasses.Num() > 0)
+		{
+			return Settings->CivilianClasses[FMath::RandHelper(Settings->CivilianClasses.Num())].LoadSynchronous();
+		}
+
+		return nullptr;
+	};
+
+	UClass* FirstClass = ResolveClass(Scenario->FirstClass);
+	UClass* SecondClass = ResolveClass(Scenario->SecondClass);
+	if (!FirstClass || !SecondClass)
+	{
+		UE_LOG(LogGunDay, Warning, TEXT("시비 배역: '%s' 에 세울 클래스가 없다. 상황의 First/Second Class 나 Civilian Classes 를 채울 것."), *Scenario->Name);
+		Spot.bCastSpent = true;
+		return false;
+	}
+
+	// 지점을 가운데 두고 좌우로 마주 선다.
+	const FVector Center = Spot.GetActorLocation();
+	const FVector Side = Spot.GetActorRightVector() * (Settings->DisputeCastSpacing * 0.5f);
+
+	UNavigationSystemV1* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+
+	auto SpawnOne = [&](UClass* Class, const FVector& Desired, const FVector& FaceTowards) -> APawn*
+	{
+		FVector Location = Desired;
+
+		FNavLocation OnNav;
+		if (NavSystem && NavSystem->ProjectPointToNavigation(Desired, OnNav, FVector(200.0f, 200.0f, 300.0f)))
+		{
+			Location = OnNav.Location;
+		}
+
+		// 지점은 바닥에 놓으므로 캡슐 반 높이만큼 올려 세운다.
+		if (const ACharacter* Defaults = Cast<ACharacter>(Class->GetDefaultObject()))
+		{
+			Location.Z += Defaults->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		}
+
+		const FRotator Facing = (FaceTowards - Location).GetSafeNormal2D().Rotation();
+
+		FActorSpawnParameters Params;
+		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		APawn* Pawn = World->SpawnActor<APawn>(Class, Location, Facing, Params);
+		if (Pawn && !Pawn->GetController())
+		{
+			Pawn->SpawnDefaultController();
+		}
+		return Pawn;
+	};
+
+	APawn* First = SpawnOne(FirstClass, Center - Side, Center + Side);
+	APawn* Second = SpawnOne(SecondClass, Center + Side, Center - Side);
+	if (!First || !Second)
+	{
+		if (First) { First->Destroy(); }
+		if (Second) { Second->Destroy(); }
+		return false;
+	}
+
+	Spot.CastFirst = First;
+	Spot.CastSecond = Second;
+	Spot.CastScenarioIndex = ScenarioIndex;
+
+	UE_LOG(LogGunDay, Log, TEXT("시비 배역: %s 에 '%s' 배역을 세웠다 (%s, %s)"),
+		*Spot.GetName(), *Scenario->Name, *First->GetName(), *Second->GetName());
+	return true;
+}
+
+void UGunDayDisputeSubsystem::DismissCast(AGunDayDisputeSpot& Spot)
+{
+	APawn* First = Spot.CastFirst.Get();
+	APawn* Second = Spot.CastSecond.Get();
+
+	if (IsInDispute(First) || IsInDispute(Second))
+	{
+		return;
+	}
+
+	const bool bHadAnyone = First || Second || Spot.bCastSpent;
+
+	for (APawn* Pawn : { First, Second })
+	{
+		if (IsValid(Pawn))
+		{
+			if (AController* Controller = Pawn->GetController())
+			{
+				Controller->Destroy();
+			}
+			Pawn->Destroy();
+		}
+	}
+
+	Spot.CastFirst.Reset();
+	Spot.CastSecond.Reset();
+	Spot.CastScenarioIndex = INDEX_NONE;
+	Spot.bCastSpent = false;
+
+	if (bHadAnyone)
+	{
+		UE_LOG(LogGunDay, Verbose, TEXT("시비 배역: %s 의 배역을 치웠다"), *Spot.GetName());
+	}
+}
+
+bool UGunDayDisputeSubsystem::IsSpotInView(const AGunDayDisputeSpot& Spot) const
+{
+	UWorld* World = GetWorld();
+	APlayerController* Controller = UGameplayStatics::GetPlayerController(this, 0);
+	if (!World || !Controller)
+	{
+		return false;
+	}
+
+	FVector EyeLocation;
+	FRotator EyeRotation;
+	Controller->GetPlayerViewPoint(EyeLocation, EyeRotation);
+
+	// 사람 머리 높이를 본다. 바닥만 가려져 있으면 보이는 것으로 친다.
+	const FVector Target = Spot.GetActorLocation() + FVector(0.0f, 0.0f, 150.0f);
+	const FVector ToTarget = (Target - EyeLocation).GetSafeNormal();
+	if (FVector::DotProduct(ToTarget, EyeRotation.Vector()) < InViewDotThreshold)
+	{
+		return false;
+	}
+
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(GunDayDisputeCastSight), false);
+	Params.AddIgnoredActor(Controller->GetPawn());
+
+	FHitResult Hit;
+	const bool bBlocked = World->LineTraceSingleByChannel(Hit, EyeLocation, Target, ECC_Visibility, Params);
+	return !bBlocked;
+}
+
+bool UGunDayDisputeSubsystem::UsesOwnCast(const AGunDayDisputeSpot& Spot) const
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	return Settings && Settings->bSpawnDisputeCast && Spot.bEnabled && Spot.bBringOwnCast;
+}
+
+int32 UGunDayDisputeSubsystem::PickScenarioForSpot(const AGunDayDisputeSpot& Spot) const
+{
+	const UGunDayCoreSettings* Settings = GetSettings();
+	if (Spot.ScenarioIndices.Num() > 0)
+	{
+		return Spot.ScenarioIndices[FMath::RandHelper(Spot.ScenarioIndices.Num())];
+	}
+
+	return FMath::RandHelper(FMath::Max(1, Settings ? Settings->DisputeScenarios.Num() : 1));
 }
 
 bool UGunDayDisputeSubsystem::StartDisputeNearPlayer(int32 ScenarioIndex)
@@ -203,7 +480,7 @@ bool UGunDayDisputeSubsystem::StartDisputeNearPlayer(int32 ScenarioIndex)
 	return BeginDispute(*People[0], *People[1], Index);
 }
 
-bool UGunDayDisputeSubsystem::BeginDispute(APawn& First, APawn& Second, int32 ScenarioIndex)
+bool UGunDayDisputeSubsystem::BeginDispute(APawn& First, APawn& Second, int32 ScenarioIndex, AGunDayDisputeSpot* Spot)
 {
 	const FGunDayDisputeScenario* Scenario = GetScenario(ScenarioIndex);
 	if (!Scenario)
@@ -234,6 +511,7 @@ bool UGunDayDisputeSubsystem::BeginDispute(APawn& First, APawn& Second, int32 Sc
 	Dispute.ScenarioIndex = ScenarioIndex;
 	Dispute.Stage = EGunDayDisputeStage::Verbal;
 	Dispute.NextStageAtSeconds = ElapsedSeconds + Scenario->StageSeconds;
+	Dispute.Spot = Spot;
 
 	if (UGunDaySocietySubsystem* Society = GetWorld() ? GetWorld()->GetSubsystem<UGunDaySocietySubsystem>() : nullptr)
 	{
@@ -442,6 +720,12 @@ void UGunDayDisputeSubsystem::FireShot(FGunDayActiveDispute& Dispute)
 
 	// 먼저 꺼낸 쪽이 먼저 쏜다고 본다. 번갈아 말하다 끝난 쪽이 쏘게 해도 된다.
 	UGameplayStatics::ApplyDamage(Victim, Scenario->ShotDamage, Shooter->GetController(), Shooter, nullptr);
+
+	// 총이 오간 자리는 같은 배역으로 다시 시작하지 않는다.
+	if (AGunDayDisputeSpot* Spot = Dispute.Spot.Get())
+	{
+		Spot->bCastSpent = true;
+	}
 
 	if (Society && Settings)
 	{
