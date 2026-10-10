@@ -27,6 +27,8 @@ class UGunDayWantedSubsystem;
  *   GunDay.Alley.Result     지난 판 결과 다시 보기
  *   GunDay.Dispute.Start    주변 시민 둘로 시비 일으키기
  *   GunDay.Dispute.Clear    진행 중인 시비 끝내기
+ *   GunDay.Pedestrians.Enabled 0  행인 끄기
+ *   GunDay.Pedestrians.Clear      행인 치우기 (켜져 있으면 다시 채운다)
  *   GunDay.Jeong 80         사회의 정을 80 으로
  *   GunDay.Profile          주변 사람들의 진영 보기
  *   GunDay.News.Next        뉴스 한 줄 내보내기

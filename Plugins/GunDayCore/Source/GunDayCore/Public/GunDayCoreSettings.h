@@ -161,6 +161,48 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "군중 반응")
 	TArray<TSoftClassPtr<APawn>> CivilianClasses;
 
+	/**
+	 * 플레이어 주변에 행인을 유지한다. 빈 맵에서도 거리에 사람이 다니게 하는 장치다.
+	 * 행인은 Civilian Classes 에서 고르고, 총성에 흩어지고 신고하는 목격자가 된다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "행인")
+	bool bSpawnPedestrians;
+
+	/** 플레이어 주변에 유지할 행인 수. */
+	UPROPERTY(config, EditAnywhere, Category = "행인", meta = (ClampMin = "0"))
+	int32 PedestrianCount;
+
+	/** 행인이 나타나는 가장 가까운 거리. 눈앞에서 생기지 않게 한다. */
+	UPROPERTY(config, EditAnywhere, Category = "행인", meta = (ClampMin = "0.0"))
+	float PedestrianMinSpawnDistance;
+
+	/** 행인이 나타나는 가장 먼 거리. */
+	UPROPERTY(config, EditAnywhere, Category = "행인", meta = (ClampMin = "0.0"))
+	float PedestrianMaxSpawnDistance;
+
+	/** 이 거리 밖으로 멀어진 행인은 치운다. 나타나는 거리보다 멀게 둔다. */
+	UPROPERTY(config, EditAnywhere, Category = "행인", meta = (ClampMin = "0.0"))
+	float PedestrianDespawnDistance;
+
+	/** 모자란 행인을 한 명씩 채우는 간격(초). 한꺼번에 생기면 티가 난다. */
+	UPROPERTY(config, EditAnywhere, Category = "행인", meta = (ClampMin = "0.05", Units = "s"))
+	float PedestrianSpawnIntervalSeconds;
+
+	/** 행인을 걷게 한다. 킷의 행동 트리가 이미 걷게 한다면 끈다. */
+	UPROPERTY(config, EditAnywhere, Category = "행인")
+	bool bDrivePedestrianWander;
+
+	/** 한 번에 걸어가는 거리. */
+	UPROPERTY(config, EditAnywhere, Category = "행인", meta = (ClampMin = "100.0"))
+	float PedestrianWanderRadius;
+
+	/** 도착한 뒤 다음 걸음까지 서 있는 시간(초). 최소와 최대 사이에서 고른다. */
+	UPROPERTY(config, EditAnywhere, Category = "행인", meta = (ClampMin = "0.0", Units = "s"))
+	float PedestrianIdleMinSeconds;
+
+	UPROPERTY(config, EditAnywhere, Category = "행인", meta = (ClampMin = "0.0", Units = "s"))
+	float PedestrianIdleMaxSeconds;
+
 	/** 시민끼리의 시비를 일으킨다. */
 	UPROPERTY(config, EditAnywhere, Category = "시비")
 	bool bEnableDisputes;

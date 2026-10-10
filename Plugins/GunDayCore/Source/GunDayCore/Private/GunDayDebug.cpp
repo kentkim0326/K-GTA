@@ -13,6 +13,7 @@
 #include "GunDayEncounterSubsystem.h"
 #include "GunDayPoliceResponseSubsystem.h"
 #include "GunDayNewsSubsystem.h"
+#include "GunDayPedestrianSubsystem.h"
 #include "GunDaySocietySubsystem.h"
 #include "GunDayWantedSubsystem.h"
 #include "EngineUtils.h"
@@ -315,6 +316,32 @@ namespace
 
 			const bool bEnabled = (Args.Num() == 0) || (FCString::Atoi(*Args[0]) != 0);
 			Dispute->SetDisputesEnabled(bEnabled);
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdPedestriansEnabled(
+		TEXT("GunDay.Pedestrians.Enabled"),
+		TEXT("행인을 켜고 끈다. 끄면 있던 행인도 치운다. 예: GunDay.Pedestrians.Enabled 0"),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>& Args, UWorld* World)
+		{
+			UGunDayPedestrianSubsystem* Pedestrians = World ? World->GetSubsystem<UGunDayPedestrianSubsystem>() : nullptr;
+			if (!Pedestrians)
+			{
+				return;
+			}
+
+			const bool bEnabled = (Args.Num() == 0) || (FCString::Atoi(*Args[0]) != 0);
+			Pedestrians->SetPedestriansEnabled(bEnabled);
+		}));
+
+	FAutoConsoleCommandWithWorldAndArgs CmdPedestriansClear(
+		TEXT("GunDay.Pedestrians.Clear"),
+		TEXT("행인을 전부 치운다. 켜져 있으면 시야 밖에서 다시 채운다."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateLambda([](const TArray<FString>&, UWorld* World)
+		{
+			if (UGunDayPedestrianSubsystem* Pedestrians = World ? World->GetSubsystem<UGunDayPedestrianSubsystem>() : nullptr)
+			{
+				Pedestrians->ClearPedestrians();
+			}
 		}));
 
 	FAutoConsoleCommandWithWorldAndArgs CmdAlleyStart(

@@ -185,6 +185,14 @@ void UGunDayCrowdSubsystem::NotifyGunshot(FVector NoiseLocation)
 	}
 }
 
+bool UGunDayCrowdSubsystem::IsAlerted(const APawn* Civilian) const
+{
+	return Civilian && Alerted.ContainsByPredicate([Civilian](const FGunDayAlertedCivilian& Entry)
+	{
+		return Entry.Civilian.Get() == Civilian;
+	});
+}
+
 void UGunDayCrowdSubsystem::CalmAll()
 {
 	for (FGunDayAlertedCivilian& Entry : Alerted)

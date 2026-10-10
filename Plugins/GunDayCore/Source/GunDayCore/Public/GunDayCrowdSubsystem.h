@@ -71,6 +71,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "GunDay|Crowd")
 	int32 GetAlertedCivilianCount() const { return Alerted.Num(); }
 
+	/** 이 시민이 지금 놀라 달아나는 중인가. 행인을 걷게 하는 쪽이 이 동안은 손대지 않는다. */
+	UFUNCTION(BlueprintPure, Category = "GunDay|Crowd")
+	bool IsAlerted(const APawn* Civilian) const;
+
 	/** 놀란 시민을 전부 진정시킨다. 목격자 등록도 푼다. */
 	UFUNCTION(BlueprintCallable, Category = "GunDay|Crowd")
 	void CalmAll();

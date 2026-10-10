@@ -140,6 +140,8 @@ Visual Studio 2022 와 Windows SDK 가 필요하다.
 | `GunDay.Alley.Result` | 지난 판 결과를 다시 띄운다 |
 | `GunDay.Dispute.Start` | 주변 시민 둘로 시비를 일으킨다 |
 | `GunDay.Dispute.Clear` | 진행 중인 시비를 끝낸다 |
+| `GunDay.Pedestrians.Enabled 0` | 행인을 끄고 있던 행인도 치운다 |
+| `GunDay.Pedestrians.Clear` | 행인을 치운다. 켜져 있으면 시야 밖에서 다시 채운다 |
 | `GunDay.Jeong 80` | 사회의 정을 80으로 맞춘다 |
 | `GunDay.Profile` | 주변 사람들의 진영을 로그에 찍는다 |
 | `GunDay.News.Next` | 뉴스 한 줄을 지금 내보낸다 |

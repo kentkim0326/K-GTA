@@ -635,6 +635,7 @@ void UGunDayDisputeSubsystem::AdvanceDispute(FGunDayActiveDispute& Dispute)
 
 	if (FMath::FRand() > FMath::Clamp(EscalateChance, 0.0f, 1.0f))
 	{
+		UE_LOG(LogGunDay, Log, TEXT("시비: 더 가지 않고 가라앉았다 (%s)."), *Scenario->Name);
 		Dispute.Stage = EGunDayDisputeStage::Resolved;
 		OnDisputeStageChanged.Broadcast(Dispute.First.Get(), Dispute.Second.Get(), Dispute.Stage);
 		return;
@@ -642,6 +643,7 @@ void UGunDayDisputeSubsystem::AdvanceDispute(FGunDayActiveDispute& Dispute)
 
 	const bool bWasVerbal = (Dispute.Stage == EGunDayDisputeStage::Verbal);
 	Dispute.Stage = bWasVerbal ? EGunDayDisputeStage::Shoving : EGunDayDisputeStage::Drawn;
+	UE_LOG(LogGunDay, Log, TEXT("시비: %s (%s)."), bWasVerbal ? TEXT("몸싸움이 됐다") : TEXT("총을 꺼냈다"), *Scenario->Name);
 
 	OnDisputeStageChanged.Broadcast(Dispute.First.Get(), Dispute.Second.Get(), Dispute.Stage);
 	SpeakLine(Dispute);
