@@ -596,6 +596,10 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
 	TArray<FGunDayCaption> TitleCaptions;
 
+	/** 제목 위 빨간 딱지에 적는 말. 비우면 딱지를 그리지 않는다. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	FString TitleTag;
+
 	/** 시작 화면 왼쪽 아래의 제목. */
 	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
 	FString TitleText;

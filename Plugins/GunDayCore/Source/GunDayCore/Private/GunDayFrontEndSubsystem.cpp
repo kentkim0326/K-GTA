@@ -346,6 +346,26 @@ void UGunDayFrontEndSubsystem::ShowTitle()
 			.Padding(FMargin(90.0f, 0.0f, 0.0f, 80.0f))
 			[
 				SNew(SVerticalBox)
+				// 제목 위의 작은 딱지. 잼 테마 "DIRECTOR'S CUT". 비우면 안 그린다.
+				+ SVerticalBox::Slot().AutoHeight().HAlign(HAlign_Left).Padding(4.0f, 0.0f, 0.0f, 10.0f)
+				[
+					SNew(SBorder)
+					.Visibility(Settings->TitleTag.IsEmpty() ? EVisibility::Collapsed : EVisibility::HitTestInvisible)
+					.BorderImage(White)
+					.BorderBackgroundColor(FLinearColor(0.72f, 0.06f, 0.06f, 0.92f))
+					.Padding(FMargin(14.0f, 5.0f))
+					[
+						SNew(STextBlock)
+						.Text(FText::FromString(Settings->TitleTag))
+						.Font([]()
+						{
+							FSlateFontInfo TagFont = Font(TEXT("Bold"), 22);
+							TagFont.LetterSpacing = 320;
+							return TagFont;
+						}())
+						.ColorAndOpacity(FLinearColor::White)
+					]
+				]
 				+ SVerticalBox::Slot().AutoHeight().Padding(0.0f, 0.0f, 0.0f, 14.0f)
 				[
 					SNew(STextBlock)
