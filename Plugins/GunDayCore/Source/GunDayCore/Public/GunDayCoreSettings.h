@@ -395,4 +395,36 @@ public:
 	/** 정이 바닥일 때만 나오는 문구. */
 	UPROPERTY(config, EditAnywhere, Category = "뉴스")
 	TArray<FString> LowJeongTemplates;
+
+	/** 마네킹 위에 사람 겉모습을 덧씌울지. 끄면 킷 마네킹 그대로다. */
+	UPROPERTY(config, EditAnywhere, Category = "외형")
+	bool bApplyAppearances = true;
+
+	/** 이 스켈레톤을 쓰는 마네킹은 UE4 마네킹으로 보고 UE5 Manny 를 한 번 거친다. */
+	UPROPERTY(config, EditAnywhere, Category = "외형")
+	TSoftObjectPtr<USkeleton> UE4MannequinSkeleton;
+
+	/** UE4 마네킹과 MetaHuman 사이에 끼우는 UE5 Manny 메시. 화면에는 안 보인다. */
+	UPROPERTY(config, EditAnywhere, Category = "외형")
+	TSoftObjectPtr<USkeletalMesh> MannyMesh;
+
+	/** UE4 마네킹 → UE5 Manny 리타깃 애님 블루프린트(킷). 붙은 부모 메시의 포즈를 옮긴다. */
+	UPROPERTY(config, EditAnywhere, Category = "외형")
+	TSoftClassPtr<UAnimInstance> UE4ToUE5RetargetAnimClass;
+
+	/** UE5 Manny → MetaHuman 몸 리타깃 애님 블루프린트(킷). */
+	UPROPERTY(config, EditAnywhere, Category = "외형")
+	TSoftClassPtr<UAnimInstance> UE5ToMetaHumanRetargetAnimClass;
+
+	/** 얼굴 애님 블루프린트. 몸의 포즈를 받아 얼굴을 맞춘다. */
+	UPROPERTY(config, EditAnywhere, Category = "외형")
+	TSoftClassPtr<UAnimInstance> FaceAnimClass;
+
+	/** 머리카락을 붙일 얼굴 뼈. */
+	UPROPERTY(config, EditAnywhere, Category = "외형")
+	FName HairBoneName = TEXT("head");
+
+	/** 폰 클래스별 겉모습. 위에서부터 처음 맞는 규칙을 쓴다. */
+	UPROPERTY(config, EditAnywhere, Category = "외형")
+	TArray<FGunDayAppearanceRule> AppearanceRules;
 };

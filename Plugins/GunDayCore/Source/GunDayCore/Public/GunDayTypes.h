@@ -8,6 +8,55 @@
 #include "GunDayTypes.generated.h"
 
 class APawn;
+class UAnimInstance;
+class USkeletalMesh;
+class USkeleton;
+class UStaticMesh;
+
+/**
+ * 사람 한 명의 겉모습. 킷 마네킹 위에 덧씌운다.
+ * 몸과 얼굴은 리타깃으로 움직이고, 옷은 몸을 그대로 따라간다.
+ */
+USTRUCT(BlueprintType)
+struct FGunDayAppearance
+{
+	GENERATED_BODY()
+
+	/** 로그에 찍을 이름. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "외형")
+	FName Name;
+
+	/** MetaHuman 몸 스켈레톤을 쓰는 몸 메시. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "외형")
+	TSoftObjectPtr<USkeletalMesh> Body;
+
+	/** 얼굴 메시. 비우면 얼굴 없이 몸만 붙인다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "외형")
+	TSoftObjectPtr<USkeletalMesh> Face;
+
+	/** 옷과 신발. 몸의 포즈를 그대로 따른다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "외형")
+	TArray<TSoftObjectPtr<USkeletalMesh>> Clothes;
+
+	/** 머리카락·수염. 얼굴의 head 뼈에 붙는 정적 메시. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "외형")
+	TArray<TSoftObjectPtr<UStaticMesh>> Hair;
+};
+
+/** 어떤 폰에 어떤 겉모습들을 입힐지. 위에서부터 처음 맞는 규칙을 쓴다. */
+USTRUCT(BlueprintType)
+struct FGunDayAppearanceRule
+{
+	GENERATED_BODY()
+
+	/** 이 클래스이거나 이 클래스를 상속한 폰에 적용한다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "외형")
+	TSoftClassPtr<APawn> PawnClass;
+
+	/** 이 중 하나를 고른다. 같은 폰에는 늘 같은 것을 고른다. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "외형")
+	TArray<FGunDayAppearance> Appearances;
+};
 
 /** 수배 열기(heat)를 올리는 행위. 값별 가중치는 GunDayCoreSettings 에서 조정한다. */
 UENUM(BlueprintType)
