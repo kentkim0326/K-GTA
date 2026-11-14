@@ -324,7 +324,8 @@ void UGunDayCrimeWatcherSubsystem::LogKitClassLayout(APawn& Pawn)
 	for (const UActorComponent* Component : Components)
 	{
 		// 엔진 컴포넌트는 볼 것이 없다. 블루프린트로 만든 컴포넌트만 적는다.
-		if (Component && Component->GetClass()->ClassGeneratedBy)
+		// ClassGeneratedBy 는 에디터 전용 멤버라 게임 빌드에서 쓸 수 없다. 클래스 플래그로 본다.
+		if (Component && Component->GetClass()->HasAnyClassFlags(CLASS_CompiledFromBlueprint))
 		{
 			UE_LOG(LogGunDay, Log, TEXT("킷 구성:   └ %s (%s) — %s"),
 				*Component->GetName(), *Component->GetClass()->GetName(), *Describe(Component->GetClass()));
