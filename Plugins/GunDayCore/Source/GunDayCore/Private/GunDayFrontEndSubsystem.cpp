@@ -7,12 +7,14 @@
 #include "Engine/Texture2D.h"
 #include "Engine/World.h"
 #include "FileMediaSource.h"
+#include "Components/AudioComponent.h"
 #include "Containers/Ticker.h"
 #include "Framework/Application/IInputProcessor.h"
 #include "Framework/Application/SlateApplication.h"
 #include "MediaPlayer.h"
 #include "MediaTexture.h"
 #include "Misc/Paths.h"
+#include "Sound/SoundBase.h"
 #include "GameFramework/PlayerController.h"
 #include "GunDayCore.h"
 #include "GunDayCoreSettings.h"
@@ -129,6 +131,8 @@ void UGunDayFrontEndSubsystem::Deinitialize()
 {
 	HideScreen();
 	StopTitleMovie();
+	StopNarration();
+	StopMusic(0.0f);
 	BackgroundTexture = nullptr;
 
 	Super::Deinitialize();
@@ -273,6 +277,8 @@ void UGunDayFrontEndSubsystem::ShowTitle()
 	}
 
 	StartTitleMovie();
+	StartNarration();
+	PlayMusic(Settings->TitleMusic, Settings->TitleMusicVolume, true);
 
 	const FSlateBrush* White = FCoreStyle::Get().GetBrush("WhiteBrush");
 	auto Shade = [White](float Alpha) -> TSharedRef<SWidget>
@@ -312,6 +318,27 @@ void UGunDayFrontEndSubsystem::ShowTitle()
 				+ SVerticalBox::Slot().FillHeight(0.10f)[ Shade(0.2f) ]
 				+ SVerticalBox::Slot().FillHeight(0.10f)[ Shade(0.4f) ]
 				+ SVerticalBox::Slot().FillHeight(0.28f)[ Shade(0.62f) ]
+			]
+			// 내레이션 자막. 제목 위, 화면 가운데.
+			+ SOverlay::Slot()
+			.HAlign(HAlign_Center)
+			.VAlign(VAlign_Bottom)
+			.Padding(FMargin(0.0f, 0.0f, 0.0f, 440.0f))
+			[
+				// 폭을 고정하고 그 폭에서 줄바꿈한다. 자동 줄바꿈은 가운데 정렬 슬롯에서 폭을 좁게 잡아
+				// 한 단어씩 세로로 쪼개졌다.
+				SNew(SBox)
+				.WidthOverride(1300.0f)
+				[
+					SNew(STextBlock)
+					.Text_UObject(this, &ThisClass::GetCurrentCaption)
+					.Font(Font(TEXT("Italic"), 32))
+					.ColorAndOpacity(FLinearColor(1.0f, 0.96f, 0.86f))
+					.ShadowOffset(FVector2D(2.0f, 2.0f))
+					.ShadowColorAndOpacity(FLinearColor(0.0f, 0.0f, 0.0f, 0.9f))
+					.Justification(ETextJustify::Center)
+					.WrapTextAt(1300.0f)
+				]
 			]
 			+ SOverlay::Slot()
 			.HAlign(HAlign_Left)
@@ -435,11 +462,103 @@ FReply UGunDayFrontEndSubsystem::HandleTitleKey(const FKey& Key)
 	return FReply::Handled();
 }
 
+void UGunDayFrontEndSubsystem::StartNarration()
+{
+	StopNarration();
+
+	const UGunDayCoreSettings* Settings = GetDefault<UGunDayCoreSettings>();
+	USoundBase* Sound = Settings->TitleNarration.LoadSynchronous();
+	if (!Sound)
+	{
+		return;
+	}
+
+	Narration = UGameplayStatics::CreateSound2D(this, Sound, 1.0f, 1.0f, 0.0f, nullptr, false, false);
+	if (Narration)
+	{
+		// 시작 화면은 게임을 멈춘다. UI 소리여야 멈춘 동안에도 들린다.
+		Narration->bIsUISound = true;
+		Narration->Play();
+		NarrationStartSeconds = FPlatformTime::Seconds();
+		UE_LOG(LogGunDay, Log, TEXT("시작 화면: 내레이션 재생 (%s, 자막 %d줄)"), *Sound->GetName(), Settings->TitleCaptions.Num());
+	}
+}
+
+void UGunDayFrontEndSubsystem::PlayMusic(const TSoftObjectPtr<USoundBase>& Track, float Volume, bool bUISound)
+{
+	StopMusic(0.6f);
+
+	USoundBase* Sound = Track.LoadSynchronous();
+	if (!Sound)
+	{
+		return;
+	}
+
+	Music = UGameplayStatics::CreateSound2D(this, Sound, Volume, 1.0f, 0.0f, nullptr, false, false);
+	if (Music)
+	{
+		// 시작·결과 화면은 게임을 멈춘다. 그 화면의 음악은 UI 소리여야 들린다.
+		Music->bIsUISound = bUISound;
+		Music->FadeIn(1.0f, Volume);
+	}
+}
+
+void UGunDayFrontEndSubsystem::StopMusic(float FadeSeconds)
+{
+	if (Music)
+	{
+		if (FadeSeconds > 0.0f)
+		{
+			Music->bAutoDestroy = true;
+			Music->FadeOut(FadeSeconds, 0.0f);
+		}
+		else
+		{
+			Music->Stop();
+			Music->DestroyComponent();
+		}
+	}
+	Music = nullptr;
+}
+
+void UGunDayFrontEndSubsystem::StopNarration()
+{
+	if (Narration)
+	{
+		Narration->Stop();
+		Narration->DestroyComponent();
+	}
+	Narration = nullptr;
+}
+
+FText UGunDayFrontEndSubsystem::GetCurrentCaption() const
+{
+	if (!Narration)
+	{
+		return FText::GetEmpty();
+	}
+
+	const float Elapsed = static_cast<float>(FPlatformTime::Seconds() - NarrationStartSeconds);
+	for (const FGunDayCaption& Caption : GetDefault<UGunDayCoreSettings>()->TitleCaptions)
+	{
+		if (Elapsed >= Caption.Start && Elapsed < Caption.End)
+		{
+			return FText::FromString(Caption.Text);
+		}
+	}
+	return FText::GetEmpty();
+}
+
 void UGunDayFrontEndSubsystem::StartRound()
 {
 	HideScreen();
 	StopTitleMovie();
+	StopNarration();
 	UGameplayStatics::SetGamePaused(this, false);
+	{
+		const UGunDayCoreSettings* MusicSettings = GetDefault<UGunDayCoreSettings>();
+		PlayMusic(MusicSettings->RoundMusic, MusicSettings->RoundMusicVolume, false);
+	}
 
 	if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0))
 	{
@@ -574,6 +693,9 @@ void UGunDayFrontEndSubsystem::ShowResult()
 	ShowScreen(Content);
 	ScreenKind = 2;
 	PauseWhileScreenShown();
+
+	// 총격전이 끝나면 다시 잔잔한 곡. 방금 일어난 일과 어울리지 않는 그 대비가 이 게임의 말투다.
+	PlayMusic(Settings->TitleMusic, Settings->TitleMusicVolume, true);
 
 	UE_LOG(LogGunDay, Log, TEXT("결과 화면: %s, %.1f초, 처치 %d, 최고 수배 %d"),
 		bLastSurvived ? TEXT("생존") : TEXT("쓰러짐"), LastSeconds, LastKills, PeakWantedLevel);

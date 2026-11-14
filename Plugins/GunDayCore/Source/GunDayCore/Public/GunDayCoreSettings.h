@@ -428,6 +428,29 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "외형")
 	TArray<FGunDayAppearanceRule> AppearanceRules;
 
+	/**
+	 * 맞으면 반격하는 행인의 비율. 정이 100 일 때. 행인이 생길 때 한 번 정한다.
+	 * 나머지는 도망간다(군중 반응).
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "행인 반응", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float FightBackChanceAtHighJeong = 0.15f;
+
+	/** 정이 0 일 때 반격하는 비율. 사이는 정에 따라 섞는다. 정이 사라진 사회일수록 쏘면 되쏜다. */
+	UPROPERTY(config, EditAnywhere, Category = "행인 반응", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float FightBackChanceAtZeroJeong = 0.6f;
+
+	/** 반격형에게 쥐여 줄 킷 무기 데이터 에셋. 하나를 고른다. */
+	UPROPERTY(config, EditAnywhere, Category = "행인 반응")
+	TArray<TSoftObjectPtr<UObject>> FightBackWeapons;
+
+	/** 킷 행인의 '맞으면 전투 모드' 변수 이름. */
+	UPROPERTY(config, EditAnywhere, Category = "행인 반응")
+	FName KitCombatOnDamagePropertyName = TEXT("SwitchedToCombatOnDamage");
+
+	/** 킷의 무기 추가 함수 이름. 첫 번째로 무기 데이터 에셋을 받는 인자에 무기를 넣는다. */
+	UPROPERTY(config, EditAnywhere, Category = "행인 반응")
+	FName KitAddWeaponFunctionName = TEXT("AddWeapon");
+
 	/** 시작 화면과 결과 화면을 띄울지. 끄면 맵이 열리자마자 그냥 논다. */
 	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
 	bool bShowFrontEnd = true;
@@ -442,6 +465,28 @@ public:
 	 */
 	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
 	FString TitleMovie;
+
+	/** 시작 화면에서 한 번 흐르는 배경 내레이션. 비우면 내레이션 없이 간다. 키를 누르면 끊긴다. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	TSoftObjectPtr<USoundBase> TitleNarration;
+
+	/** 시작 화면과 결과 화면의 배경음악. 반복 재생한다. 내레이션 아래에 깔린다. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	TSoftObjectPtr<USoundBase> TitleMusic;
+
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면", meta = (ClampMin = "0.0", ClampMax = "2.0"))
+	float TitleMusicVolume = 0.35f;
+
+	/** 판이 도는 동안의 배경음악. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	TSoftObjectPtr<USoundBase> RoundMusic;
+
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면", meta = (ClampMin = "0.0", ClampMax = "2.0"))
+	float RoundMusicVolume = 0.6f;
+
+	/** 내레이션 자막. 시간은 내레이션 시작부터 초. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	TArray<FGunDayCaption> TitleCaptions;
 
 	/** 시작 화면 왼쪽 아래의 제목. */
 	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")

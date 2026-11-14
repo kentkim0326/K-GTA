@@ -9,6 +9,7 @@
 #include "EngineUtils.h"
 #include "GameFramework/Pawn.h"
 #include "GunDayCore.h"
+#include "GunDayCivilianReactionSubsystem.h"
 #include "GunDayCoreSettings.h"
 #include "GunDayDebug.h"
 #include "GunDayPoliceResponseSubsystem.h"
@@ -184,7 +185,9 @@ void UGunDayCrowdSubsystem::NotifyGunshot(FVector NoiseLocation, bool bPlayerCau
 		Alerted.Add(Entry);
 		++NewlyAlerted;
 
-		if (Settings->bDriveCivilianFlee)
+		// 반격형은 달아나지 않는다. 킷 전투 AI 와 이동 명령이 다투지 않게 한다.
+		const UGunDayCivilianReactionSubsystem* Reaction = World->GetSubsystem<UGunDayCivilianReactionSubsystem>();
+		if (Settings->bDriveCivilianFlee && !(Reaction && Reaction->IsFighter(Pawn)))
 		{
 			DriveFlee(*Pawn, NoiseLocation);
 		}

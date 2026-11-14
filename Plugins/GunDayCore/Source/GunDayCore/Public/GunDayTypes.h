@@ -13,6 +13,7 @@ class USkeletalMesh;
 class USkeleton;
 class UStaticMesh;
 class UTexture2D;
+class USoundBase;
 
 /**
  * 사람 한 명의 겉모습. 킷 마네킹 위에 덧씌운다.
@@ -42,6 +43,22 @@ struct FGunDayAppearance
 	/** 머리카락·수염. 얼굴의 head 뼈에 붙는 정적 메시. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "외형")
 	TArray<TSoftObjectPtr<UStaticMesh>> Hair;
+};
+
+/** 내레이션 자막 한 줄. 시간은 내레이션 시작부터 초. */
+USTRUCT(BlueprintType)
+struct FGunDayCaption
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "자막")
+	float Start = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "자막")
+	float End = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "자막")
+	FString Text;
 };
 
 /** 어떤 폰에 어떤 겉모습들을 입힐지. 위에서부터 처음 맞는 규칙을 쓴다. */

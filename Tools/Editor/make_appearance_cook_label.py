@@ -5,7 +5,7 @@ import re, unreal
 ini = unreal.Paths.project_config_dir() + "DefaultGame.ini"
 text = open(ini, encoding="utf-8-sig").read()
 section = text.split("[/Script/GunDayCore.GunDayCoreSettings]", 1)[1].split("\n[", 1)[0]
-keys = ("TitleBackground", "UE4MannequinSkeleton", "MannyMesh", "UE4ToUE5RetargetAnimClass", "UE5ToMetaHumanRetargetAnimClass", "FaceAnimClass", "+AppearanceRules")
+keys = ("TitleBackground", "TitleNarration", "TitleMusic", "RoundMusic", "+FightBackWeapons", "UE4MannequinSkeleton", "MannyMesh", "UE4ToUE5RetargetAnimClass", "UE5ToMetaHumanRetargetAnimClass", "FaceAnimClass", "+AppearanceRules")
 lines = [l for l in section.splitlines() if l.startswith(keys)]
 paths = set()
 for l in lines:

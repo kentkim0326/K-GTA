@@ -87,6 +87,23 @@ private:
 	FSlateBrush BackgroundBrush;
 	FSlateBrush MovieBrush;
 
+	/** 시작 화면 내레이션. 게임이 멈춰 있어도 들리게 UI 소리로 튼다. */
+	UPROPERTY()
+	TObjectPtr<class UAudioComponent> Narration;
+
+	double NarrationStartSeconds = 0.0;
+
+	/** 지금 깔린 배경음악. 화면이 바뀌면 이전 곡은 짧게 줄이며 끝낸다. */
+	UPROPERTY()
+	TObjectPtr<class UAudioComponent> Music;
+
+	void PlayMusic(const TSoftObjectPtr<USoundBase>& Track, float Volume, bool bUISound);
+	void StopMusic(float FadeSeconds);
+
+	void StartNarration();
+	void StopNarration();
+	FText GetCurrentCaption() const;
+
 	/** 동영상을 열어 반복 재생을 건다. 파일이 없으면 바탕 그림만 남는다. */
 	void StartTitleMovie();
 	void StopTitleMovie();
