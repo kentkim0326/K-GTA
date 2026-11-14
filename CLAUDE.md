@@ -1,7 +1,8 @@
 # K-GTA 작업 지침
 
-Unreal Engine 5.8 프로젝트. 배경과 결정 사항은 `docs/handover-2026-10-09.md` 를 먼저 읽는다.
-(그 이전 배경은 `docs/handover-2026-09-10.md`.)
+Unreal Engine 5.8 프로젝트. 배경과 결정 사항은 `docs/handover-2026-11-14.md` 를 먼저 읽는다.
+(그 이전 배경은 `docs/handover-2026-10-09.md`, `docs/handover-2026-09-10.md`.)
+작업 폴더는 `D:\Dev\GunsKorea` 다. `E:\GunsKorea` 는 git 저장소가 아닌 옛 복사본이다.
 
 ## 지켜야 할 것
 
@@ -55,4 +56,6 @@ GTA 가 라디오와 광고로 미국을 꼬집듯, 이 게임은 골목에서 �
    뉴스 티커 (완료 — `UGunDayNewsSubsystem`)
 4. 골목 하나에서 경찰 둘과 1분간 총격전 — 첫 마일스톤.
    킷 데모 맵에서 검증 완료(2026-10-09): 재미있고 적당히 힘들다는 판단.
-   남은 것은 그 1분을 City Sample 골목으로 옮기는 일이다.
+   Tokyo 골목(`KGTA_Alley_Night`)으로 옮겨 Epic AI MegaJam 에 제출(2026-11-14).
+   사람 외형, 시작·결과 화면, 행인 반격, 외침 음성이 붙었다.
+5. 시비를 말로 들리게 한다 — 자막 UI 와 음성. 지금은 머리 위 디버그 글자다.
