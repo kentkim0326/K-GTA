@@ -12,6 +12,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "NavigationSystem.h"
+#include "GunDayBarkSubsystem.h"
 #include "GunDayCore.h"
 #include "GunDayCoreSettings.h"
 #include "GunDayCrowdSubsystem.h"
@@ -716,6 +717,16 @@ void UGunDayDisputeSubsystem::SpeakLine(FGunDayActiveDispute& Dispute)
 
 	OnDisputeLine.Broadcast(Speaker, Line, Dispute.Stage);
 	UE_LOG(LogGunDay, Verbose, TEXT("시비 대사: %s \"%s\""), *Speaker->GetName(), *Line);
+
+	// 존댓말이 무너진 뒤부터 소리친다. 말다툼은 세 번째 마디부터, 몸싸움부터는 처음부터.
+	const bool bPolitenessGone = Dispute.Stage != EGunDayDisputeStage::Verbal || Dispute.LineIndex >= 3;
+	if (bPolitenessGone && Settings)
+	{
+		if (UGunDayBarkSubsystem* Bark = UGunDayBarkSubsystem::Get(this))
+		{
+			Bark->BarkOnDisputeLine(Speaker, Settings->BarkChanceOnDisputeLine);
+		}
+	}
 
 	// 자막 시스템이 붙기 전까지는 머리 위에 띄워 둔다. 다음 줄이 나올 때까지 남긴다.
 	if (GunDayDebug::IsHUDEnabled())

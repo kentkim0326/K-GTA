@@ -9,6 +9,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "GunDayBarkSubsystem.h"
 #include "GunDayCore.h"
 #include "GunDayCoreSettings.h"
 #include "GunDayCrowdSubsystem.h"
@@ -452,6 +453,22 @@ void UGunDayCrimeWatcherSubsystem::PollKitHealth()
 
 void UGunDayCrimeWatcherSubsystem::HandleKitEvent(APawn* Pawn, const UFunction* Signature, void* Parms, bool bDeath)
 {
+	// 맞은 사람은 한마디 한다. 누가 쐈는지와 상관없이. 죽은 사람은 말이 없고, 경찰이면 동료가 말한다.
+	if (IsValid(Pawn))
+	{
+		if (UGunDayBarkSubsystem* Bark = UGunDayBarkSubsystem::Get(this))
+		{
+			if (bDeath)
+			{
+				Bark->BarkOnDeath(Pawn);
+			}
+			else
+			{
+				Bark->BarkOnHit(Pawn);
+			}
+		}
+	}
+
 	const UGunDayCoreSettings* Settings = GetSettings();
 	if (!IsValid(Pawn) || !Settings || !bWatchEnabled || !Settings->bAutoReportCrimes)
 	{

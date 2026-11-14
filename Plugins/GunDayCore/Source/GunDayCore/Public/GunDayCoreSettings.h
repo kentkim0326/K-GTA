@@ -451,6 +451,114 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "행인 반응")
 	FName KitAddWeaponFunctionName = TEXT("AddWeapon");
 
+	/** 행인·형사가 맞거나 시비가 격해질 때 내뱉는 짧은 외침. 하나를 무작위로 고른다. */
+	UPROPERTY(config, EditAnywhere, Category = "외침")
+	TArray<TSoftObjectPtr<USoundBase>> BarkSounds;
+
+	/** 경찰이 현장에 나타날 때. "신고 접수돼서 나왔습니다." */
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰")
+	TArray<TSoftObjectPtr<USoundBase>> BarkPoliceArrive;
+
+	/** 경찰이 플레이어를 처음 가까이서 볼 때. */
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰")
+	TArray<TSoftObjectPtr<USoundBase>> BarkPoliceSpot;
+
+	/** 교전 중 가끔. "저는 전달만 합니다." */
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰")
+	TArray<TSoftObjectPtr<USoundBase>> BarkPoliceCombat;
+
+	/** 경찰이 맞았을 때. */
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰")
+	TArray<TSoftObjectPtr<USoundBase>> BarkPoliceHit;
+
+	/** 동료 경찰이 쓰러졌을 때 가까운 경찰이. */
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰")
+	TArray<TSoftObjectPtr<USoundBase>> BarkPoliceDown;
+
+	/**
+	 * 이 겉모습을 입은 경찰은 아래 '고참' 목록으로 말한다. 목소리가 다른 두 번째 형사.
+	 * 고참 목록이 비어 있으면 위의 경찰 목록을 쓴다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰 고참")
+	FName VeteranAppearanceName = TEXT("형사_수염");
+
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰 고참")
+	TArray<TSoftObjectPtr<USoundBase>> BarkVeteranArrive;
+
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰 고참")
+	TArray<TSoftObjectPtr<USoundBase>> BarkVeteranSpot;
+
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰 고참")
+	TArray<TSoftObjectPtr<USoundBase>> BarkVeteranCombat;
+
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰 고참")
+	TArray<TSoftObjectPtr<USoundBase>> BarkVeteranHit;
+
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰 고참")
+	TArray<TSoftObjectPtr<USoundBase>> BarkVeteranDown;
+
+	/** 여자 행인이 놀라거나 맞았을 때. */
+	UPROPERTY(config, EditAnywhere, Category = "외침|행인")
+	TArray<TSoftObjectPtr<USoundBase>> BarkCivilianFemale;
+
+	/** 남자 반격형 행인이 맞고 덤빌 때. */
+	UPROPERTY(config, EditAnywhere, Category = "외침|행인")
+	TArray<TSoftObjectPtr<USoundBase>> BarkCivilianFight;
+
+	/** 남자 행인이 시비에서 반말로 넘어갈 때. 공용 외침과 섞어 쓴다. */
+	UPROPERTY(config, EditAnywhere, Category = "외침|행인")
+	TArray<TSoftObjectPtr<USoundBase>> BarkDisputeMale;
+
+	/** 총성에 흩어지는 행인이 외칠 확률. */
+	UPROPERTY(config, EditAnywhere, Category = "외침|행인", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float BarkChanceOnAlert = 0.4f;
+
+	/** 경찰 교전 잡담 간격(초). 이 간격마다 가까운 경찰 하나가 말할 기회를 얻는다. */
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰", meta = (ClampMin = "1.0", Units = "s"))
+	float BarkPoliceChatterSeconds = 4.0f;
+
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float BarkPoliceChatterChance = 0.5f;
+
+	/** 도착 인사 사이 최소 간격(초). 막힌 경찰을 다시 투입할 때마다 인사하지 않게. */
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰", meta = (ClampMin = "0.0", Units = "s"))
+	float BarkPoliceArriveCooldown = 12.0f;
+
+	/** "저기 있다" 사이 최소 간격(초). 경찰이 계속 새로 투입돼도 이 간격으로만 외친다. */
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰", meta = (ClampMin = "0.0", Units = "s"))
+	float BarkPoliceSpotCooldown = 20.0f;
+
+	/** 이 거리 안에 들어온 경찰이 "저기 있다"를 외친다(cm). */
+	UPROPERTY(config, EditAnywhere, Category = "외침|경찰", meta = (ClampMin = "100.0", Units = "cm"))
+	float BarkPoliceSpotDistance = 2000.0f;
+
+	/** 맞았을 때 외칠 확률. */
+	UPROPERTY(config, EditAnywhere, Category = "외침", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float BarkChanceOnHit = 0.8f;
+
+	/** 시비 대사를 주고받을 때 외칠 확률. 존댓말이 무너진 뒤(말다툼 세 번째 마디, 몸싸움부터)에만. */
+	UPROPERTY(config, EditAnywhere, Category = "외침", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float BarkChanceOnDisputeLine = 0.6f;
+
+	/** 같은 사람이 다시 외치기까지(초). 연사에 맞아도 한 번만 외친다. */
+	UPROPERTY(config, EditAnywhere, Category = "외침", meta = (ClampMin = "0.0", Units = "s"))
+	float BarkCooldownPerPawn = 4.0f;
+
+	/** 누구든 다음 외침까지(초). 골목이 고함으로 뒤덮이지 않게. */
+	UPROPERTY(config, EditAnywhere, Category = "외침", meta = (ClampMin = "0.0", Units = "s"))
+	float BarkGlobalCooldown = 0.6f;
+
+	UPROPERTY(config, EditAnywhere, Category = "외침", meta = (ClampMin = "0.0", ClampMax = "4.0"))
+	float BarkVolume = 1.0f;
+
+	/** 이 거리 안에서는 크게, 여기서 줄어들기 시작한다(cm). */
+	UPROPERTY(config, EditAnywhere, Category = "외침", meta = (ClampMin = "0.0", Units = "cm"))
+	float BarkInnerRadius = 500.0f;
+
+	/** 줄어드는 구간의 길이(cm). 안쪽 반경 + 이 거리 밖에서는 안 들린다. */
+	UPROPERTY(config, EditAnywhere, Category = "외침", meta = (ClampMin = "100.0", Units = "cm"))
+	float BarkFalloffDistance = 2500.0f;
+
 	/** 시작 화면과 결과 화면을 띄울지. 끄면 맵이 열리자마자 그냥 논다. */
 	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
 	bool bShowFrontEnd = true;

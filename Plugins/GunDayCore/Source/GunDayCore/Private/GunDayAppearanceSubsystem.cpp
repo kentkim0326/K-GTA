@@ -37,6 +37,17 @@ namespace
 	}
 }
 
+bool UGunDayAppearanceSubsystem::IsFemale(const APawn* Pawn) const
+{
+	return Pawn && Females.Contains(Pawn);
+}
+
+FName UGunDayAppearanceSubsystem::GetAppearanceName(const APawn* Pawn) const
+{
+	const FName* Name = Pawn ? AppearanceNames.Find(Pawn) : nullptr;
+	return Name ? *Name : NAME_None;
+}
+
 bool UGunDayAppearanceSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
 	if (const UWorld* World = Cast<UWorld>(Outer))
@@ -239,6 +250,11 @@ bool UGunDayAppearanceSubsystem::ApplyAppearance(ACharacter* Character)
 	}
 
 	Dressed.Add(Character);
+	AppearanceNames.Add(Character, Appearance->Name);
+	if (Appearance->Face.ToSoftObjectPath().ToString().Contains(TEXT("/Female/")))
+	{
+		Females.Add(Character);
+	}
 
 	// 1. UE4 마네킹이면 UE5 Manny 를 한 번 거친다. 화면에는 안 보이지만 포즈는 계속 계산한다.
 	USkeletalMeshComponent* Driver = Source;

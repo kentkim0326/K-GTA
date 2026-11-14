@@ -1,0 +1,11 @@
+# 행인·형사 외침. 원본 파일 이름(한글) ↔ 에셋 이름
+- 너 진짜.mp3 → SW_Bark_NeoJinjja
+- 뭐야 이게.mp3 → SW_Bark_MwoyaIge
+- 아니.mp3 → SW_Bark_Ani
+- 너.mp3 → SW_Bark_Neo
+- 두고 봐 너.mp3 → SW_Bark_DugoBwa
+- 가정교육 시켜주마.mp3 → SW_Bark_GajeongGyoyuk
+- 제기랄.mp3 → SW_Bark_Jegiral
+- 야.mp3 → SW_Bark_Ya
+- 학씨.mp3 → SW_Bark_Haksi
+- 까불고있어.mp3 → SW_Bark_Kkabulgo

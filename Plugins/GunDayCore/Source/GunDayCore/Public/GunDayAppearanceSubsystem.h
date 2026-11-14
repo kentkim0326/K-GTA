@@ -43,6 +43,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GunDay|Appearance")
 	bool ApplyAppearance(ACharacter* Character);
 
+	/** 여자 얼굴을 입혔는가. 외침 목소리를 고를 때 쓴다. 입히지 않았으면 false. */
+	bool IsFemale(const APawn* Pawn) const;
+
+	/** 입힌 겉모습의 이름(세팅의 Name). 입히지 않았으면 NAME_None. */
+	FName GetAppearanceName(const APawn* Pawn) const;
+
 private:
 	void HandleActorSpawned(AActor* Actor);
 
@@ -61,4 +67,10 @@ private:
 
 	/** 이미 입힌 캐릭터. */
 	TSet<TWeakObjectPtr<ACharacter>> Dressed;
+
+	/** 여자 얼굴을 입힌 캐릭터. */
+	TSet<TWeakObjectPtr<const APawn>> Females;
+
+	/** 캐릭터마다 입힌 겉모습 이름. */
+	TMap<TWeakObjectPtr<const APawn>, FName> AppearanceNames;
 };
