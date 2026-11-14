@@ -12,6 +12,7 @@ class UAnimInstance;
 class USkeletalMesh;
 class USkeleton;
 class UStaticMesh;
+class UTexture2D;
 
 /**
  * 사람 한 명의 겉모습. 킷 마네킹 위에 덧씌운다.

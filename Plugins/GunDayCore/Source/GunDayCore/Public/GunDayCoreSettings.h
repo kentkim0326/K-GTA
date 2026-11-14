@@ -427,4 +427,59 @@ public:
 	/** 폰 클래스별 겉모습. 위에서부터 처음 맞는 규칙을 쓴다. */
 	UPROPERTY(config, EditAnywhere, Category = "외형")
 	TArray<FGunDayAppearanceRule> AppearanceRules;
+
+	/** 시작 화면과 결과 화면을 띄울지. 끄면 맵이 열리자마자 그냥 논다. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	bool bShowFrontEnd = true;
+
+	/** 시작 화면 전체를 덮는 바탕 그림. 동영상이 뜨기 전과 동영상이 없을 때 보인다. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	TSoftObjectPtr<UTexture2D> TitleBackground;
+
+	/**
+	 * 바탕 그림 위에서 반복 재생하는 동영상. Content 폴더 기준 경로(예: KGTA/Movies/TitleLoop.mp4).
+	 * 패키징할 때 그 폴더를 DirectoriesToAlwaysStageAsNonUFS 에 넣어야 따라간다.
+	 */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	FString TitleMovie;
+
+	/** 시작 화면 왼쪽 아래의 제목. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	FString TitleText;
+
+	/** 제목 아래 한 줄 소개. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면", meta = (MultiLine = true))
+	FString TitleBlurb;
+
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	FString TitlePrompt;
+
+	/** 시작하면 이 길이의 판이 돈다(초). 끝까지 버티면 생존이다. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면", meta = (ClampMin = "10.0", Units = "s"))
+	float RoundSeconds = 60.0f;
+
+	/** 판이 시작할 때의 수배 레벨. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면", meta = (ClampMin = "0"))
+	int32 RoundStartWantedLevel = 1;
+
+	/** 판이 끝나고 결과 화면이 뜨기까지(초). 쓰러지는 모습을 잠깐 보여 준다. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면", meta = (ClampMin = "0.0", Units = "s"))
+	float ResultDelaySeconds = 2.5f;
+
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	FString SurvivedTitle;
+
+	/** 버텼을 때의 한 줄. 여러 개면 하나를 고른다. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	TArray<FString> SurvivedLines;
+
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	FString DiedTitle;
+
+	/** 쓰러졌을 때의 한 줄. 여러 개면 하나를 고른다. */
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	TArray<FString> DiedLines;
+
+	UPROPERTY(config, EditAnywhere, Category = "시작·결과 화면")
+	FString ResultPrompt;
 };
